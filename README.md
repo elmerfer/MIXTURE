@@ -30,7 +30,7 @@ Download the file MIXTURE.R and install it in your favorite directory (i.e ../my
 Download the file LM22.RData and install it in the same directory (i.e ../myFavorite/LM22.RData) [Newman et al.](http://www.nature.com/nmeth/journal/v12/n5/abs/nmeth.3337.html)
 
 
-## Running the tests
+## Running MIXTURE
 
 This example tends to estimate the same pure cell-types from LM22 signature matrix from [Newman et al.](http://www.nature.com/nmeth/journal/v12/n5/abs/nmeth.3337.html)
 ```
@@ -53,7 +53,12 @@ save(mix.test, file = "MIXTURE_FILE_LM22.RData") #save full list as an RData obj
 
 ```
 
+## Running on BRCA TCGA Data
+Download the file BRCA_TCGA_MIXTURE_paper.R and open it. Follow the code. You will need to install the following packages:
+* [edgeR](https://bioconductor.org/packages/release/bioc/html/edgeR.html)
+* [gplots](https://cran.r-project.org/web/packages/gplots/index.html)
 
+The  TCGA BRCA data ready to use by the BRCA_TCGA_MIXTURE_paper.R script can be downloaded from [here](https://www.dropbox.com/s/zki1gkx5mq1quah/BRCA_rna.rds?dl=0)
 ## Contributing
 
 Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
