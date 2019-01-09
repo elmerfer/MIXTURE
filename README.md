@@ -57,6 +57,7 @@ save(mix.test, file = "MIXTURE_FILE_LM22.RData") #save full list as an RData obj
 Download the file BRCA_TCGA_MIXTURE_paper.R and open it. Follow the code. You will need to install the following packages:
 * [edgeR](https://bioconductor.org/packages/release/bioc/html/edgeR.html)
 * [gplots](https://cran.r-project.org/web/packages/gplots/index.html)
+
 The  TCGA BRCA data ready to use by the BRCA_TCGA_MIXTURE_paper.R script can be downloaded from [here](https://www.dropbox.com/s/zki1gkx5mq1quah/BRCA_rna.rds?dl=0)
 ## Contributing
 
