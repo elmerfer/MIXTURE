@@ -26,8 +26,8 @@ The current "functional like" version of the software requires the following lib
 
 ### Installing
 
-Download the file MIXTURE.R and install them in your favorite directory (i.e ../myFavorite/MIXTURE.R)
-Download the file LM22.RData and install them in the same directory (i.e ../myFavorite/LM22.RData) [Newman et al.](http://www.nature.com/nmeth/journal/v12/n5/abs/nmeth.3337.html)
+Download the file MIXTURE.R and install it in your favorite directory (i.e ../myFavorite/MIXTURE.R)
+Download the file LM22.RData and install it in the same directory (i.e ../myFavorite/LM22.RData) [Newman et al.](http://www.nature.com/nmeth/journal/v12/n5/abs/nmeth.3337.html)
 
 
 ## Running the tests
