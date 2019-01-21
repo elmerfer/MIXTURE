@@ -121,11 +121,11 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
   ###bla bla bla
   nullDist <- match.arg(nullDist)
   cat("\nRunning...\n")
-  .number.of.genes <- sum(rownames(expressionMatrix) %in% rownames(signatureMatrix))
+  .list.of.genes <- rownames(expressionMatrix)[which((rownames(expressionMatrix) %in% rownames(signatureMatrix)))]
   Orig <- MIXER(expressionMatrix , signatureMatrix, functionMixture , useCores = .ncores)
   cat("Original Samples run\n")
   if (nullDist == "none") {
-    out.list <- list(Subjects = Orig,PermutedMetrix = NULL, p.values = NULL, method = "none", usedGenes = .number.of.genes)#, pvalue = pvalues))   
+    out.list <- list(Subjects = Orig,PermutedMetrix = NULL, p.values = NULL, method = "none", usedGenes = .list.of.genes)#, pvalue = pvalues))   
   }
   #id.iter <- lapply(1:iter, function(x) sample(nrow(expressionMatrix)))
   if (nullDist == "SingleSubjectTest") {
@@ -143,7 +143,7 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
     cat("\nfinish\n")
     metrix <- do.call(function(...) abind(along = 3,... ), lapply(out.l, function(x) x))
     
-    out.list <- list(Subjects = Orig,PermutedMetrix = metrix, method = "SingleSubjectTest", , usedGenes = .number.of.genes)
+    out.list <- list(Subjects = Orig,PermutedMetrix = metrix, method = "SingleSubjectTest", , usedGenes = .list.of.genes)
     #return(list(Subjects = Orig,PermutedMetrix = metrix, method = "SingleSubjectTest"))#, pvalue = pvalues))  
   }
   if (nullDist == "PopulationBased") {
@@ -161,7 +161,7 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
     cat("\nfinish\n")
     
     # pvalues <- apply(metrix, MARGIN = c(1,2), FUN = quantile, 1-pvalue) < pv$Subjects$ACCmetrix
-    out.list <- list(Subjects = Orig,PermutedMetrix = out.mix, method = "PopulationBased", usedGenes = .number.of.genes)
+    out.list <- list(Subjects = Orig,PermutedMetrix = out.mix, method = "PopulationBased", usedGenes = .list.of.genes)
     #return(list(Subjects = Orig,PermutedMetrix = out.mix, method = "PopulationBased"))#, pvalue = pvalues))  
   }
   ## save to excel file
@@ -718,8 +718,8 @@ TuneSvmForDeconv <- function(XX,Y, nuseq, delta){
      beta<-beta/sum(beta)
      beta[beta < delta] <- 0
      new.W <- sweep(XX,MARGIN=2,beta,'*')
-     pred <- apply(new.W, 1, sum)
-     rmse.pred <- sqrt((mean((Y-pred)^2)))
+     pred <- apply(new.W, 1, sum, na.rm=T)
+     rmse.pred <- sqrt((mean((Y-pred)^2,na.rm=T)))
      return(list(modelo=modelo, RMSEpred = rmse.pred ))
   })
   selector <- which.min(unlist(lapply(nu.svr, function(x) x$RMSEpred)))[1]
@@ -756,8 +756,11 @@ nu.svm.robust.RFE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 1e-3, maxite
     
     w <- t(model$coefs) %*% model$SV
     w[w<0] <- 0
-    w <- w/sum(w)
-    w[ w < minProp] <- 0
+    w <- w/sum(w,na.rm=T)
+   # w[ w < minProp] <- 0
+   if(all(is.nan(w))){
+     return(list(Wa=rep(NA,ncol(X)), Wp = rep(NA,ncol(X)), RMSEa = NA, RMSEp= NA , Ra=NA, Rp=NA,  BestParams = unlist(model$nu), Iter=iter))
+   }
     if(any(w < minProp) ){
       if(sum(w > 0) == 1) break
       wsel[which(colnames(wsel) %in% colnames(w)[-which(w >= minProp)]) ] <- 0      
@@ -777,16 +780,16 @@ nu.svm.robust.RFE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 1e-3, maxite
   
   ##wsel es el absolute, sin normalizar por la sum(w)
   u <- sweep(X,MARGIN=2,wsel,'*')
-  k <- apply(u, 1, sum)
-  nusvm <- sqrt((mean((k - y)^2)))
+  k <- apply(u, 1, sum,na.rm=T)
+  nusvm <- sqrt((mean((k - y)^2,na.rm=T)))
   corrv <- cor(k, y)
   
   ##calculo de fracciones
   rm(w)
   w<-wsel/sum(wsel)#proportions or fractions (abs_method = sig.scores)
   uw <- sweep(X,MARGIN=2,w,'*')
-  kw <- apply(uw, 1, sum)
-  nusvmw <- sqrt((mean((kw - y)^2)))
+  kw <- apply(uw, 1, sum,na.rm=T)
+  nusvmw <- sqrt((mean((kw - y)^2,,na.rm=T)))
   corrvw <- cor(kw, y)
   
   

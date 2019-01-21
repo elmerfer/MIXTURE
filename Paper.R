@@ -147,16 +147,34 @@ M.abbas[M.abbas == 0] <- NA
 
 
 
-##Figure of Panel B
+##Final Figure 1 A
 setEPS()
-postscript("HeatMap_v3.eps")##we can manage better
-Heatmap(M.cib, cluster_rows = FALSE, show_row_names = FALSE, cluster_columns = FALSE, column_title = "CIBERSORT",name = "CIBERSORT",col = col.map) + 
-  Heatmap(M.nu.robust , cluster_rows = FALSE, show_row_names = FALSE, cluster_columns = FALSE , column_title = "MIXTURE", name = "MIXTURE",col = col.map.robust)  +
-Heatmap(M.abbas , cluster_rows = FALSE, show_row_names = FALSE, cluster_columns = FALSE , column_title = "ABBAS", name = "ABBAS",col = col.map)  +
-Heatmap(CorrLM22 , cluster_rows = FALSE, cluster_columns = FALSE , column_title = "Cell-types cor", name = "Correlation") 
+postscript("/home/elmer/Dropbox/IDEAS/cibersort/FiguresPaper/CIBERSORT.eps")##we can manage better
+Heatmap(M.ciber.aux, cluster_rows = FALSE, show_row_names = FALSE, cluster_columns = FALSE, column_title = "CIBERSORT",name = "CIBERSORT",col = c("blue","red")) 
 dev.off()
 
+setEPS()
+postscript("/home/elmer/Dropbox/IDEAS/cibersort/FiguresPaper/ABBAS.eps")##we can manage better
+Heatmap(M.abbas.aux, cluster_rows = FALSE, show_row_names = FALSE, cluster_columns = FALSE, column_title = "ABBAS",name = "ABBAS",col = c("blue","red")) 
+dev.off()
 
+setEPS()
+postscript("/home/elmer/Dropbox/IDEAS/cibersort/FiguresPaper/MIXTURE.eps")##we can manage better
+Heatmap(M.mixture.aux, cluster_rows = FALSE, show_row_names = FALSE, cluster_columns = FALSE, column_title = "MIXTURE",name = "MIXTURE",col = c("blue","red")) 
+dev.off()
+##ploting the heatmap for Supplementary Figure 1
+M.abbas.aux2 <- M.abbas
+diag(M.abbas.aux2) <- 0.04
+#the range of falsely detected  cell-types coefficient is [2e-5, 0.0323] 
+#so we set the color limit to 0.04 to enhance this values in the heatmap.
+#The color for the real coefficient will be "red" the full scale value of 0.04 spite
+#the range was 0.0.9334 - 0.9669. It will be manually corrected in the Supplementary Fig.
+setEPS()
+postscript("/home/elmer/Dropbox/IDEAS/cibersort/FiguresPaper/AbbasColinearity.eps")##we can manage better
+Heatmap(M.abbas.aux2, cluster_rows = FALSE, show_row_names = TRUE, 
+        cluster_columns = FALSE, column_title = "ABBAS",name = "ABBAS",
+        col = colorRamp2(c(0, 0.04), c("blue",  "red"))) 
+dev.off()
 
 
 #Heatmap(M.nnls, cluster_rows = FALSE, cluster_columns = FALSE,  column_title = "NNLS", name = "NNLS")

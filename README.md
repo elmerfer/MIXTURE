@@ -1,8 +1,8 @@
 # MIXTURE
 
-A recursive Feature extraction algorithm for robust deconvolution of cell-types mixture from molecular signatures
+A noise constrained Recursive Feature Extraction algorithm for robust deconvolution of cell-types mixture from molecular signatures
 
-Since the significant impact of immunotherapy in cancer, the estimation of the immune cell-type proportions present in the tumor becomes crucial. The tumor cell mixture content of a patient has been dissected by statistical and machine learning algorithms, yet the accuracy of inferred proportions is limited by the underlying model. We overcome this drawback with a noise constrained recursive feature extraction added to a ν -SVR algorithm.
+Since the significant impact of immunotherapy in cancer, the estimation of the immune cell-type proportions present in a tumor becomes crucial. Currently, the deconvolution of the cell mixture content of a tumor is carried out by different analytic tools, yet the accuracy of inferred cell type proportions has room for improvement. We improve tumor immune environment characterization developing MIXTURE, an analytical method based on a noise constrained recursive variable selection for a support vector regression
 
 ## Getting Started
 
