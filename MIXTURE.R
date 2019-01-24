@@ -796,3 +796,50 @@ nu.svm.robust.RFE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 1e-3, maxite
   return(list(Wa=wsel, Wp = w, RMSEa = nusvm, RMSEp= nusvmw , Ra=corrv, Rp=corrvw,  BestParams = unlist(model$nu), Iter=iter))
   
 }
+
+### PARA REVISAR
+GetMIXTUREfromExcelFile <- function(path){
+  #this function recovers the MIXTURE object from the EXCEL(r) results file
+  #NOTE: we need to save the null distribution mode!
+  #NOTE2: "Metrix" should be changed for "Metrics"
+  sn <- getSheetNames(path)
+  if( !all(sn %in% c("Absolute","Proportions","Metrix","Pvalues","UsedGenes"))){
+    stop("not a MIXTURE EXCEL FILE")
+  }
+  Subject <- vector("list",3)
+  names(Subject) <- c("MIXabs","MIXprop","ACCMetrix")
+  Subject$MIXabs <- read.xlsx(xlsxFile = path, sheet = "Absolute")
+  Subject$MIXprop <- read.xlsx(xlsxFile = path, sheet = "Proportions")
+  Subject$ACCMetrix <- read.xlsx(xlsxFile = path, sheet = "Metrix")
+  mix.list <- vector("list",4) 
+  names(mix.list) <- 
+    return(
+      list(Subjects = Subject,
+           PermutedMatrix = NA,
+           p.values = read.xlsx(xlsxFile = path, sheet = "Pvalues"),
+           usedGenes = read.xlsx(xlsxFile = path, sheet = "UsedGenes"))
+    )
+}
+
+require(plyr)
+ContrastCellTypes <- function(obj, pheno, test = c("wilcoxon","ttest"),
+                              type = c("proportion","absolute"),...){
+  ##falta controles de tipo
+  test <- match.arg(test, choices = c("wilcoxon","ttest"))
+  type <- match.arg(type, choices = c("proportion","absolute"))
+  cts <- GetMixture(obj, type = type)
+  if(test == "wilcoxon"){
+    res <- adply(.data = cts, .margins = 2, .fun = function(x, ph,...){
+      prueba <- wilcox.test(a~b, data.frame(a=x,b=ph),...)
+      return(c(prueba$statistic, prueba$p.value))
+    },ph = pheno, ...)
+  }else{##assume t.test
+    res <- adply(.data = cts, .margins = 2, .fun = function(x, ph,...){
+      prueba <- t.test(a~b, data.frame(a=x,b=ph),...)
+      return(c(prueba$statistic, prueba$p.value))
+    },ph = pheno, ...)    
+  }
+  colnames(res) <- c("statistic","p.value")
+  return(res)
+}
+
