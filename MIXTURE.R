@@ -797,7 +797,7 @@ nu.svm.robust.RFE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 1e-3, maxite
   
 }
 
-### PARA REVISAR
+### PARA REVISAR----
 GetMIXTUREfromExcelFile <- function(path){
   #this function recovers the MIXTURE object from the EXCEL(r) results file
   #NOTE: we need to save the null distribution mode!
