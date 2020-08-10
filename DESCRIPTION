@@ -1,0 +1,14 @@
+Package: MIXTURE
+Type: Package
+Title: MIXTURE: a nu-SVR based recursive feature extraction mdoel with noise constraints for molecular signature deconvolution of bulk tumor tissues
+Version: 0.0.1
+Date: 2020
+Author: Elmer Fernandez
+Maintainer: Elmer Fernández <efernandez@cidie.ucc.edu.ar>
+Description: molñecular signature immune deconvolution algorithm
+License: MIT licence
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.0
+Imports: stringr
+Depends: BiocParallel, ConsensusClusterPlus, cluster
