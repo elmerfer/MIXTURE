@@ -36,11 +36,11 @@ one of the followings : "none" , "PopulationBased" use the whole expressionMatri
 \item{filesave}{: (character) the name of the output EXCEL(r) file in xlsx format}
 }
 \value{
-A list with the following slots: 
+an S3 object of class MIXTURE  (list) with the following slots: 
 Subjects        : a list with the following slots:
        MIXabs    : a data.frame with S rows, and L columns with the absoluite regression coefficients
        MIXprop   : a data.frame with S rows, and L columns with the proportions
-       ACCmetrix : a data.frame with S rows, and RMSEa (Root mean squared error from absolute coeficientes),
+       ACCmetric : a data.frame with S rows, and RMSEa (Root mean squared error from absolute coeficientes),
        RMSEp (RMSE with proportions coefficientes)
        Ra (correlation absolute coeffs)
        Rp (correlation proportion coeffs)

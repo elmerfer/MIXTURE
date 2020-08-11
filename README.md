@@ -3,6 +3,16 @@
 A noise constrained Recursive Feature Extraction algorithm for robust deconvolution of cell-types mixture from molecular signatures
 
 Since the significant impact of immunotherapy in cancer, the estimation of the immune cell-type proportions present in a tumor becomes crucial. Currently, the deconvolution of the cell mixture content of a tumor is carried out by different analytic tools, yet the accuracy of inferred cell type proportions has room for improvement. We improve tumor immune environment characterization developing MIXTURE, an analytical method based on a noise constrained recursive variable selection for a support vector regression
+[Get manuscript](https://www.biorxiv.org/content/10.1101/726562v1)
+
+# NOTE: 
+
+The [MIXTURE shiny App](https://github.com/elmerfer/MIXTURE.App) is now available
+The RUN_MIXTURE code was tested on Linux, Windows and Mac. On windows only one CPU core is allowed.
+
+# New! [MIXTURE in Python](https://github.com/MsMatias/MixturePy)
+
+
 
 ## Getting Started
 
@@ -66,10 +76,13 @@ Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c6
 
 ## Authors
 
-* **Elmer Andrés Fernández** - *Initial work* - [Profile](https://www.researchgate.net/profile/Elmer_Fernandez)
+* **Elmer Andrés Fernández** - *Initial work* - [Profile](https://www.researchgate.net/profile/Elmer_Fernandez) - [CIDIE]- [CONICET](http://www.conicet.gov.ar) - [UCC](http://www.ucc.edu.ar)
 
+## How to cite
+
+MIXTURE: an improved algorithm for immune tumor microenvironment estimation based on gene expression data. Elmer A. Fernández,  Yamil D. Mahmoud, Florencia Veigas, Darío Rocha,  Mónica Balzarini,  Hugo D. Lujan,  Gabriel A. Rabinovich,  M. Romina Girotti doi: https://doi.org/10.1101/726562
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE.md](https://github.com/elmerfer/MIXTURE.App/blob/master/LICENSE) file for details
 

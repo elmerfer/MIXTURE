@@ -41,7 +41,22 @@ library(openxlsx)
 
 
 #### Main CORE function: This function should not be called by end user
-MIXER <- function(expressionMatrix, signatureMatrix, functionMixture, useCores = 1L, verbose =FALSE){
+#' .MIXER
+#' this is the main core function, it should not be called by users
+#' @param expressionMatrix a GxS gene expression matrix. with row names genes ID as in the signature Matrix. Genes in rows, samples in columns
+#' @param signatureMatrix a NxL gene signature matrix for L cell types
+#' @param functionMixture   : the deconvolution function: cibersort, nu.svm.robust.RFE, ls.rfe.abbas (tiped without quotation marks)
+#' @param useCores          : (integer) the number of cpus to use.
+
+.MIXER <- function(expressionMatrix, signatureMatrix, functionMixture, useCores = 1L, verbose =FALSE){
+  
+  ## OS independent multi-core platform (single machine)
+  bp.param <- BiocParallel::bpparam()
+  
+  .ncores = ifelse(useCores > parallel::detectCores(), parallel::detectCores()-1, useCores)
+  
+  BiocParallel::bpworkers(bp.param) <- .ncores
+  
   X <- data.matrix(signatureMatrix)
   Yorig <- data.matrix(expressionMatrix)
   ##No Idea why
@@ -52,7 +67,7 @@ MIXER <- function(expressionMatrix, signatureMatrix, functionMixture, useCores =
   id.yx <- rownames(Yorig) %in% rownames(X)
   
   ##Normalizing the signature Matrix
-  
+  ##this follows the normalization by Newman, overall mean and overall sd
   X <- (X - mean(X))/ sd(as.vector(X))
   
   #Select common genes
@@ -72,16 +87,16 @@ MIXER <- function(expressionMatrix, signatureMatrix, functionMixture, useCores =
   
   
   ##Normalization of data
-  ##trully simgle subject
+  ##truly single subject
   y.median.by.subj <- apply(Y, 2, median)
   Yn <- scale(Y, center = TRUE, scale = TRUE)
   
   ##perform mixture analysis
   
-  out <- mclapply(1:ncol(Yn), function(yi) {
+  out <- BiocParallel::bplapply(1:ncol(Yn), function(yi) {
   #  print(paste("id ",yi))
     functionMixture(X,y = as.numeric(Yn[,yi]))
-  }  , mc.cores = useCores)
+  }  , BPPARAM = bp.param)
   
   ##building output
   mix.mat.abs <- do.call(rbind, lapply(out, function(x) x$Wa))
@@ -95,7 +110,7 @@ MIXER <- function(expressionMatrix, signatureMatrix, functionMixture, useCores =
   rownames(mat.res) <- rownames(mix.mat.prop)
   
   
-  return(list(MIXabs = mix.mat.abs, MIXprop = mix.mat.prop, ACCmetrix = mat.res))
+  return(list(MIXabs = mix.mat.abs, MIXprop = mix.mat.prop, ACCmetric = mat.res))
   
 }
 
@@ -117,11 +132,11 @@ MIXER <- function(expressionMatrix, signatureMatrix, functionMixture, useCores =
 #'
 #'@export
 #'
-#'@return   A list with the following slots: 
+#'@return   an S3 object of class MIXTURE  (list) with the following slots: 
 #'Subjects        : a list with the following slots:
 #'        MIXabs    : a data.frame with S rows, and L columns with the absoluite regression coefficients
 #'        MIXprop   : a data.frame with S rows, and L columns with the proportions
-#'        ACCmetrix : a data.frame with S rows, and RMSEa (Root mean squared error from absolute coeficientes),
+#'        ACCmetric : a data.frame with S rows, and RMSEa (Root mean squared error from absolute coeficientes),
 #'        RMSEp (RMSE with proportions coefficientes)
 #'        Ra (correlation absolute coeffs)
 #'        Rp (correlation proportion coeffs)
@@ -139,7 +154,6 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
 #This function perform the decovolution of the signatureMatrix over the gene expression subject matrix.
 
 ## Returns:
-  bpParam <- bpparam()
   
   .ncores = ifelse(useCores > parallel::detectCores(), parallel::detectCores()-1, useCores)
   
@@ -153,14 +167,14 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
   .list.of.genes <- rownames(expressionMatrix)[which((rownames(expressionMatrix) %in% rownames(signatureMatrix)))]
   
   ##compute the deconvolution onto the original samples
-  Orig <- MIXER(expressionMatrix , signatureMatrix, functionMixture , useCores = .ncores)
+  Orig <- .MIXER(expressionMatrix , signatureMatrix, functionMixture , useCores = .ncores)
   
   ##compute the total "immune content"
   total.median.by.subj <- apply(data.matrix(expressionMatrix), 2, median, na.rm=T)
   total.median.by.subj.lm22genes <- apply(data.matrix(expressionMatrix[.list.of.genes,]), 2, median, na.rm=T)
   max.median.full.cohort <- max(median(data.matrix(expressionMatrix)),1)
   
-  Orig$ACCmetrix <- cbind(Orig$ACCmetrix, IscBySbj = total.median.by.subj.lm22genes/total.median.by.subj, 
+  Orig$ACCmetric <- cbind(Orig$ACCmetric, IscBySbj = total.median.by.subj.lm22genes/total.median.by.subj, 
                           IscPob = total.median.by.subj.lm22genes/max.median.full.cohort)
   
   if(verbose){
@@ -180,10 +194,10 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
       nsamp <- sample(nrow(M.O)) 
       M.aux <- M.O[nsamp,]
       rownames(M.aux) <- rownames(M.O)
-      return(MIXER(M.aux , signatureMatrix , functionMixture , useCores = .ncores )$ACCmetrix)
+      return(.MIXER(M.aux , signatureMatrix , functionMixture , useCores = .ncores )$ACCmetric)
     } )
     
-    cat("\nfinish\n")
+    if(verbose) cat("\nfinish\n")
     metrix <- do.call(function(...) abind(along = 3,... ), lapply(out.l, function(x) x))
     
     out.list <- list(Subjects = Orig,PermutedMetrix = metrix, method = "SingleSubjectTest", , usedGenes = .list.of.genes)
@@ -192,17 +206,17 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
   
   if (nullDist == "PopulationBased") {
     expressionMatrix <- data.matrix(expressionMatrix)
-    cat("\nPopulation based null distribution\n")
-    cat("\nBuilding random population\n")
+    if(verbose) cat("\nPopulation based null distribution\n")
+    if(verbose) cat("\nBuilding random population\n")
         M.aux <- do.call(cbind, mclapply(1:iter, function(i) {
         as.vector(expressionMatrix)[sample(nrow(expressionMatrix)*ncol(expressionMatrix), size = nrow(expressionMatrix))]
       }, mc.cores = .ncores  ))
       
   
    rownames(M.aux) <- rownames(expressionMatrix)
-   cat("\nBuilding null distribution\n")  
-    out.mix <- MIXER(M.aux , signatureMatrix , functionMixture , useCores = .ncores )$ACCmetrix
-    cat("\nfinish\n")
+   if(verbose) cat("\nBuilding null distribution\n")  
+    out.mix <- .MIXER(M.aux , signatureMatrix , functionMixture , useCores = .ncores )$ACCmetric
+    if(verbose)  cat("\nfinish\n")
     
     
     out.list <- list(Subjects = Orig,PermutedMetrix = out.mix, method = "PopulationBased", usedGenes = .list.of.genes)
@@ -214,16 +228,23 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
     SaveExcel(out.list, file = fileSave)
     cat(paste("\n",fileSave,"....OK"))
   }
-  
+  class(out.list) <- c("MIXTURE",class(outlist))
   return(out.list)
 }
 
 ##Access functions----
+#' GetMixture
+#' returns the regresssion coefficient matrix B as absolute values or as proportion (normalized) values
+#' @param obj an object of class MIXTURE (see MIXTURE)
+#' @param type a character string "proportion" or "absolute". short word is allowed
+#' @export
+#' @return a SxK data matrix with K cell types (according to the signature matrix) and S subjects
+#' 
 GetMixture <- function(obj, type = c("proportion","absolute") ){
 ##This function returns the mixture coefficientes estimated by MIXTURE
 ##Args:
   ## obj: the list object returned by MIXTURE
-  ## type : (character) the type of the coefficients: "proportion" or "absolute"
+  ## type : (character) the type of the coefficients: "proportion" or "absolute" (default: "proportion")
 ##Returns:
   ## a SxL coefficient matrix (N: Number of subjects, L: number of cell types in the signature matrix)
   type <- match.arg(type)
@@ -236,7 +257,13 @@ GetMixture <- function(obj, type = c("proportion","absolute") ){
   rownames(M.ret) <- rownames(obj$Subjects[[matrix.type]])
   return(M.ret)
 }
-
+#' GetRMSE
+#' returns the Root Mean Square Error between y - XB, with unnormalized B>0 (absolute) or normalized \code{sum(B)==1} (proportions)
+#' @param obj an object of class MIXTURE (see MIXTURE)
+#' @param type a character string "proportion" or "absolute". short word is allowed (default: "proportion")
+#' @export
+#' @return a SxK data matrix with K cell types (according to the signature matrix) and S subjects
+#'
 GetRMSE <- function(obj, type = c("proportion","absolute") ){
 ##This function returns the RMSE estimated by MIXTURE
   ##Args:
@@ -250,8 +277,15 @@ GetRMSE <- function(obj, type = c("proportion","absolute") ){
          absolute = rmsetype <- "RMSEa",
          proportion = rmsetype <- "RMSEp")
   
-  unlist(obj$Subjects$ACCmetrix[,rmsetype])
+  unlist(obj$Subjects$ACCmetric[,rmsetype])
 }
+#' GetCorrelation
+#' returns the Correlation \code{cor(Y,XB)} unnormalized B>0 (absolute) or normalized \code{sum(B)==1} (proportions)
+#' @param obj an object of class MIXTURE (see MIXTURE)
+#' @param type a character string "proportion" or "absolute". short word is allowed (default: "proportion")
+#' @export
+#' @return a SxK data matrix with K cell types (according to the signature matrix) and S subjects
+#'
 
 GetCorrelation <- function(obj, type = c("proportion","absolute") ){
 ##This function returns the Correlation estimated by MIXTURE
@@ -266,10 +300,16 @@ GetCorrelation <- function(obj, type = c("proportion","absolute") ){
          absolute = cortype <- "Ra",
          proportion = cortype <- "Rp")
   
-  unlist(obj$Subjects$ACCmetrix[,cortype])
+  unlist(obj$Subjects$ACCmetric[,cortype])
 }
 
-
+#' GetMetrix
+#' returns the Root Mean Square Error between y - XB, with unnormalized B>0 (absolute) or normalized \code{sum(B)==1} (proportions)
+#' @param obj an object of class MIXTURE (see MIXTURE)
+#' @param metric : (character) "all" all the metrics (type ignored), "RMSE": (see GetRMSE), "R": (see GetCorrelation)
+#' @param type a character string "proportion" or "absolute". short word is allowed (default: "proportions")
+#' @export
+#' @return if "all" : ACCmetric matrix, otherwise see GetRMSE or GetCorrelation
 GetMetrics <- function(obj, metric = c("all","RMSE", "R"), type = c("proportion","absolute")){
 ##This function returns the metrix matrix
   ##Args:
@@ -277,18 +317,24 @@ GetMetrics <- function(obj, metric = c("all","RMSE", "R"), type = c("proportion"
   ## metric : (character) "all" all the metrics (type ignored), "RMSE": (see GetRMSE), "R": (see GetCorrelation)
   ## type : (character) the type of the coefficients: "proportion" or "absolute"
   ##Returns:
-  ## if "all" : ACCmetrix matrix, otherwise see GetRMSE or GetCorrelation
+  ## if "all" : ACCmetric matrix, otherwise see GetRMSE or GetCorrelation
   
   metrix <- match.arg(metric)
   
   switch(metric,
-         all = return(obj$Subject$ACCmetrix),
+         all = return(obj$Subject$ACCmetric),
          RMSE = return(GetRMSE(obj, type)),
          R = return(GetCorrelation(obj, type)))
 }
 
+#' GetCellTypes
+#' returns the Root Mean Square Error between y - XB, with unnormalized B>0 (absolute) or normalized \code{sum(B)==1} (proportions)
+#' @param obj an object of class MIXTURE (see MIXTURE)
+#' @param delta (float) default 0, the threshold value to define a coefficient as cero
+#' @export
+#' @return a logical SxL matrix with TRUE if the coefficients > delta , FALSE otherwise.
 GetCellTypes <- function(obj, delta = 0){
-## This function returns those coefficientes >0 
+## This function returns those coefficiente > delta 
 ##Args:
   ## obj: the list object returned by MIXTURE
 ##Returns:
@@ -311,11 +357,11 @@ GetCellTypes <- function(obj, delta = 0){
 #     if (obj$method == "PopulationBased"){
 #       nd <- apply(obj$PermutedMetrix,2,quantile, c(pval,1-pval) )
 #       
-#       pvalued <- cbind(nd[1,"RMSEa"] > obj$Subjects$ACCmetrix[, "RMSEa"],
-#                        nd[1,"RMSEp"] > obj$Subjects$ACCmetrix[, "RMSEp"],
-#                        nd[2,"Ra"] < obj$Subjects$ACCmetrix[, "Ra"],
-#                        nd[2,"Rp"] > obj$Subjects$ACCmetrix[, "Rp"])
-#       colnames(pvalued) <- colnames(obj$Subjects$ACCmetrix)[1:4]  
+#       pvalued <- cbind(nd[1,"RMSEa"] > obj$Subjects$ACCmetric[, "RMSEa"],
+#                        nd[1,"RMSEp"] > obj$Subjects$ACCmetric[, "RMSEp"],
+#                        nd[2,"Ra"] < obj$Subjects$ACCmetric[, "Ra"],
+#                        nd[2,"Rp"] > obj$Subjects$ACCmetric[, "Rp"])
+#       colnames(pvalued) <- colnames(obj$Subjects$ACCmetric)[1:4]  
 #       
 #       return(pvalued)  
 #     }else{
@@ -327,6 +373,12 @@ GetCellTypes <- function(obj, delta = 0){
 #   }
 # }
 
+#' GetPvalues
+#' returns the p values matrix.
+#' @description if not calculated, stop
+#' @param obj an object of class MIXTURE (see MIXTURE)
+#' @export
+#' @return the p value matrix
 GetPvalues <- function(obj){
 ##This function returns the p values of the model evaluatin each ACC Metric
   # ## Args:
@@ -335,11 +387,11 @@ GetPvalues <- function(obj){
   #   ## a Sx4 matrix of p values (columns RMSEa, RMSEp, Ra, Rp)
   # 
   if (obj$method == "none"){
-    cat("error: run MIXTURE with nullDist = SingleSubjectTest or PopulationBased")
-    return()
+    stop("error: run MIXTURE with nullDist = SingleSubjectTest or PopulationBased")
+    
   }
   if (obj$method == "PopulationBased"){
-    pvalores <- apply(obj$Subjects$ACCmetrix, MARGIN = 1, FUN = function(x, nulld) {
+    pvalores <- apply(obj$Subjects$ACCmetric, MARGIN = 1, FUN = function(x, nulld) {
       
       c(RMSEa = sum(nulld[,"RMSEa"] < x[1], na.rm=TRUE),
         RMSp = sum(nulld[,"RMSEp"] < x[2], na.rm=TRUE), 
@@ -352,20 +404,35 @@ GetPvalues <- function(obj){
   }
   
 }
-
-GetPredictedMixture <- function(obj, signatureMatrix){
+#' Predict
+#' This function will predict the profile of the molecular signature detected cell types
+#' @description 
+#' It will provide \code{Y=X*B} with the absolute or proportion values. The absolute mode (default) is suggested
+#' @param obj the object provided by MIXTURE
+#' @param signatureMatrix the signature matrix used to fit the models.
+#' @param type any of this "absolute" or "proportion", default ("absolute")
+#' @export
+#' @return the NxS predicted gene expression matrix
+Predict <- function(obj, signatureMatrix, type = c("absolute","proportion")){
 ##This function provides the prediction of the fitted model
 ##Args:
   ##obj: the object provided by MIXTURE
   ## signatureMatrix: the signature matrix used to fit the models.
 ##Returns:
-  ##
-  apply(obj$Subjects$MIXprop, 1, function(beta, sm) {
+  
+  type <- match.arg(type, choices = c("absolute","proportion"))
+  mat <- GetMixture(obj, type)
+  apply(mat, 1, function(beta, sm) {
     u <- sweep(sm,MARGIN=2,beta,'*')
     return(apply(u, 1, sum))
   }, sm = signatureMatrix)
 }
 
+#' GetUsedGenes
+#' return the amount of signature genes in common with the input data
+#' @param obj the object provided by MIXTURE
+#' @export
+#' @return a vector of Gene identifiers (i.e GeneSymbol) 
 GetUsedGenes <- function(obj){
 ##This function returns the gene list intersected between the expressionMatrix and the signatureMatrix
 ##Args: 
@@ -398,6 +465,21 @@ GetMergedCellTypes <- function(obj, ctClassType){
 }
 
 ##Saving - Open Functions----
+
+#' SaveExcel
+#' It saves MIXTURE results as an Excel xlsx file
+#' @description 
+#' It will build an xlsx file with named sheets as:
+#' Absolute (with the absolute coefficients)
+#' Proportions
+#' Metrics
+#' Pvalues
+#' UsedGenes
+#' @param obj the object provided by MIXTURE
+#' @param fileSave (character) the xlsx file name
+#' @export
+#' @seealso \code{\link{LoadMixtureResultsFromExcel}}
+#' 
 SaveExcel <- function(obj, fileSave){
 ##This function save the MIXTURE results into an EXCEL(r) file. It is internally called by MIXTURE if specified
 ##Args:
@@ -430,7 +512,11 @@ SaveExcel <- function(obj, fileSave){
   writeData(wb, "UsedGenes", x)
   saveWorkbook(wb, fileSave, overwrite = TRUE)          
 }
-
+#' LoadMixtureResultsFromExcel
+#' This function load a MIXTURE object from an excel file 
+#' @param path the file path to the xlsx file
+#' @export
+#' @seealso \code{\link{SaveExcel}}
 LoadMixtureResultsFromExcel <- function(path){
   if ( str_detect(path,"xlsx") == FALSE) return( NULL)
   abs <- read.xlsx(path, sheet = "Absolute")
@@ -443,7 +529,7 @@ LoadMixtureResultsFromExcel <- function(path){
   rownames(met) <- met[,1]
   met <- met[,-1]
   Orig <- list(MIXabs = abs, 
-               MIXprop = prop, ACCmetrix = met)
+               MIXprop = prop, ACCmetric = met)
 
   pval <- read.xlsx(path, sheet = "Pvalues")
   rownames(pval) <- pval[,1]
@@ -494,21 +580,21 @@ ProportionsBarPlot <- function(obj, type = c("proportion", "absolute") ){
 PlotNullDensity <- function(obj){
   if (obj$method == "none"){
     par(mfrow = c(2,2))
-    plot(density(obj$Subjects$ACCmetrix[,"RMSEa"]), main = "RMSE absolute", col="red")
-    plot(density(obj$Subjects$ACCmetrix[,"RMSEp"]), main = "RMSE proportion", col="red")
-    plot(density(obj$Subjects$ACCmetrix[,"Ra"]), main = "Corr absolute", col="red")
-    plot(density(obj$Subjects$ACCmetrix[,"Rp"]), main = "Corr proportion", col="red")
+    plot(density(obj$Subjects$ACCmetric[,"RMSEa"]), main = "RMSE absolute", col="red")
+    plot(density(obj$Subjects$ACCmetric[,"RMSEp"]), main = "RMSE proportion", col="red")
+    plot(density(obj$Subjects$ACCmetric[,"Ra"]), main = "Corr absolute", col="red")
+    plot(density(obj$Subjects$ACCmetric[,"Rp"]), main = "Corr proportion", col="red")
   }
   if (obj$method == "PopulationBased" ){
     par(mfrow = c(2,2))
     plot(density(obj$PermutedMetrix[,"RMSEa"]), main = "RMSE absolute")
-    lines(density(obj$Subjects$ACCmetrix[,"RMSEa"]), col="red")
+    lines(density(obj$Subjects$ACCmetric[,"RMSEa"]), col="red")
     plot(density(obj$PermutedMetrix[,"RMSEp"]), main = "RMSE proportion")
-    lines(density(obj$Subjects$ACCmetrix[,"RMSEp"]),  col="red")
+    lines(density(obj$Subjects$ACCmetric[,"RMSEp"]),  col="red")
     plot(density(obj$PermutedMetrix[,"Ra"]), main = "Corr absolute")
-    lines(density(obj$Subjects$ACCmetrix[,"Ra"]), col="red")
+    lines(density(obj$Subjects$ACCmetric[,"Ra"]), col="red")
     plot(density(obj$PermutedMetrix[,"Rp"]), main = "Corr proportion")
-    lines(density(obj$Subjects$ACCmetrix[,"Rp"]), col="red")
+    lines(density(obj$Subjects$ACCmetric[,"Rp"]), col="red")
   }else{
     cat("not available")
   }
@@ -1047,10 +1133,10 @@ GetMIXTUREfromExcelFile <- function(path){
     stop("not a MIXTURE EXCEL FILE")
   }
   Subject <- vector("list",3)
-  names(Subject) <- c("MIXabs","MIXprop","ACCMetrix")
+  names(Subject) <- c("MIXabs","MIXprop","ACCmetric")
   Subject$MIXabs <- read.xlsx(xlsxFile = path, sheet = "Absolute")
   Subject$MIXprop <- read.xlsx(xlsxFile = path, sheet = "Proportions")
-  Subject$ACCMetrix <- read.xlsx(xlsxFile = path, sheet = "Metrix")
+  Subject$ACCmetric <- read.xlsx(xlsxFile = path, sheet = "Metrix")
   mix.list <- vector("list",4) 
   names(mix.list) <- 
     return(
