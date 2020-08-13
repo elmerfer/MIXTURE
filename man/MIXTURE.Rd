@@ -9,8 +9,8 @@ MIXTURE(
   expressionMatrix,
   signatureMatrix,
   iter = 100,
-  functionMixture,
-  useCores,
+  functionMixture = nu.svm.robust.RFE,
+  useCores = 1L,
   verbose = FALSE,
   nullDist = c("none", "SingleSubjectTest", "PopulationBased"),
   fileSave
@@ -23,11 +23,11 @@ MIXTURE(
 
 \item{iter}{integer, number of iterations to estimate the p values}
 
-\item{functionMixture}{: the deconvolution function: cibersort, nu.svm.robust.RFE, ls.rfe.abbas (tiped without quotation marks)}
+\item{functionMixture}{: (default nu.svm.robust.RFE) the deconvolution function: cibersort, nu.svm.robust.RFE, ls.rfe.abbas (typed without quotation marks)}
 
 \item{useCores}{: (integer) the number of cpus to use.}
 
-\item{verbose}{: boolean. if TRUE, msgs on the screen}
+\item{verbose}{: (logical) if TRUE, msgs on the screen}
 
 \item{nullDist}{: (character) select the null distribution mode for p.valu estimation of the regression estimate
 one of the followings : "none" , "PopulationBased" use the whole expressionMatrix to draw "iter" random samples at once. 

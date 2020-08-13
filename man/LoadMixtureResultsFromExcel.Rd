@@ -15,5 +15,5 @@ LoadMixtureResultsFromExcel
 This function load a MIXTURE object from an excel file
 }
 \seealso{
-[SaveExcel]
+\code{\link{SaveExcel}}
 }

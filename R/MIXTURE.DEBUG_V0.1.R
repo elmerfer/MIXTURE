@@ -56,7 +56,7 @@ library(openxlsx)
   .ncores = ifelse(useCores > parallel::detectCores(), parallel::detectCores()-1, useCores)
   
   BiocParallel::bpworkers(bp.param) <- .ncores
-  
+  print(bp.param)
   X <- data.matrix(signatureMatrix)
   Yorig <- data.matrix(expressionMatrix)
   ##No Idea why
@@ -122,13 +122,13 @@ library(openxlsx)
 #' @param expressionMatrix a GxS gene expression matrix. with row names genes ID as in the signature Matrix. Genes in rows, samples in columns
 #' @param signatureMatrix a NxL gene signature matrix for L cell types
 #' @param iter integer, number of iterations to estimate the p values
-#' @param functionMixture   : the deconvolution function: cibersort, nu.svm.robust.RFE, ls.rfe.abbas (tiped without quotation marks)
+#' @param functionMixture   : (default nu.svm.robust.RFE) the deconvolution function: cibersort, nu.svm.robust.RFE, ls.rfe.abbas (typed without quotation marks)
 #' @param useCores          : (integer) the number of cpus to use.
-#' @param verbose           : boolean. if TRUE, msgs on the screen
+#' @param verbose           : (logical) if TRUE, msgs on the screen
 #' @param nullDist          : (character) select the null distribution mode for p.valu estimation of the regression estimate
 #'                            one of the followings : "none" , "PopulationBased" use the whole expressionMatrix to draw "iter" random samples at once. 
 #'                                         Then all the models are compared against this null distribution
-#'@param filesave           : (character) the name of the output EXCEL(r) file in xlsx format
+#'@param filesave         : (character) the name of the output EXCEL(r) file in xlsx format
 #'
 #'@export
 #'
@@ -148,7 +148,7 @@ library(openxlsx)
 #'  usedGenes       : the intersection gene list between expressionMatrix and signatureMatrix
 #'
 #'
-MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixture , useCores ,
+MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixture = nu.svm.robust.RFE  , useCores =1L,
                              verbose = FALSE, nullDist = c("none","SingleSubjectTest","PopulationBased"),
                     fileSave){
 #This function perform the decovolution of the signatureMatrix over the gene expression subject matrix.
@@ -228,7 +228,7 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
     SaveExcel(out.list, file = fileSave)
     cat(paste("\n",fileSave,"....OK"))
   }
-  class(out.list) <- c("MIXTURE",class(outlist))
+  class(out.list) <- c("MIXTURE",class(out.list))
   return(out.list)
 }
 
