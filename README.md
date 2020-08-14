@@ -8,6 +8,7 @@ Since the significant impact of immunotherapy in cancer, the estimation of the i
 # NOTE: 
 
 The [MIXTURE shiny App](https://github.com/elmerfer/MIXTURE.App) is now available
+
 The RUN_MIXTURE code was tested on Linux, Windows and Mac. 
 
 # New! [MIXTURE in Python](https://github.com/MsMatias/MixturePy)

@@ -7,6 +7,7 @@ require(ComplexHeatmap)
 #' @param signatureMatrix a NxK molecular signature
 #' @export
 #' @return an MIXTURE object 
+#' @example 
 SelfTest <- function(signatureMatrix){
   res <- MIXTURE(expressionMatrix = signatureMatrix,
                  signatureMatrix = signatureMatrix, useCores = 2)
