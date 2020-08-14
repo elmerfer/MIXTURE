@@ -1,4 +1,4 @@
-# MIXTURE
+![MIXTURE](https://github.com/elmerfer/MIXTURE.App/blob/master/www/Logo_B_1.pdf.png)
 
 A noise constrained Recursive Feature Extraction algorithm for robust deconvolution of cell-types mixture from molecular signatures
 
@@ -8,18 +8,13 @@ Since the significant impact of immunotherapy in cancer, the estimation of the i
 # NOTE: 
 
 The [MIXTURE shiny App](https://github.com/elmerfer/MIXTURE.App) is now available
-The RUN_MIXTURE code was tested on Linux, Windows and Mac. On windows only one CPU core is allowed.
+The RUN_MIXTURE code was tested on Linux, Windows and Mac. 
 
 # New! [MIXTURE in Python](https://github.com/MsMatias/MixturePy)
 
 
 ## Getting Started
 
-
-### Installing
-
-Download the file MIXTURE.R and install it in your favorite directory (i.e ../myFavorite/MIXTURE.R)
-Download the file LM22.RData and install it in the same directory (i.e ../myFavorite/LM22.RData) [Newman et al.](http://www.nature.com/nmeth/journal/v12/n5/abs/nmeth.3337.html)
 
 ## Installation
 ```
@@ -30,11 +25,12 @@ install_github("elmerfer/MIXTURE")
 
 ## Running MIXTURE
 
-This example tends to estimate the same pure cell-types from LM22 signature matrix from [Newman et al.](http://www.nature.com/nmeth/journal/v12/n5/abs/nmeth.3337.html). The LM22 matrix was stored as an RData obj here 
+This example tends to estimate the same pure cell-types from LM22 signature matrix from [Newman et al.](http://www.nature.com/nmeth/journal/v12/n5/abs/nmeth.3337.html). The LM22 matrix was stored as an RData obj here for convinience
 ```
 library(MIXTURE)
 ##Load signature matrix
 data(LM22)
+##  Run the self test on LM22 signature
 mix.test <- MIXTURE(expressionMatrix = LM22,          #N x ncol(signatureMatrix) gene expresion matrix to evaluate 
                                                       ##rownames(M) should be the GeneSymbols
               signatureMatrix = LM22,                 #the gene signature matrix (W) such that M = W*betas' 
@@ -57,8 +53,8 @@ save(mix.test, file = "MIXTURE_FILE_LM22.RData") #save full list as an RData obj
 
 
 ## Collaborators
-* ** Dario Rocha** -- - *Testing and application on TCGA Data
-* **Yamil Mahamoud** IBYME-CONICET. Application on Caner immunotherapy
+* **Dario Rocha** -- - *Testing and application on TCGA Data
+* **Yamil Mahamoud** -- IBYME-CONICET. Application on Caner immunotherapy
 
 ## How to cite
 
