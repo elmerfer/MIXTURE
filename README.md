@@ -56,6 +56,7 @@ save(mix.test, file = "MIXTURE_FILE_LM22.RData") #save full list as an RData obj
 ## Collaborators
 * **Dario Rocha** -- - *Testing and application on TCGA Data
 * **Yamil Mahamoud** -- IBYME-CONICET. Application on Cancer immunotherapy
+* **Joaquin Merlo** -- IBYME-CONICET. Application on Cancer immunotherapy
 
 ## How to cite
 
