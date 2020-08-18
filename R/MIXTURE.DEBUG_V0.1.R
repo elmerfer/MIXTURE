@@ -56,7 +56,7 @@ library(openxlsx)
   .ncores = ifelse(useCores > parallel::detectCores(), parallel::detectCores()-1, useCores)
   
   BiocParallel::bpworkers(bp.param) <- .ncores
-  print(bp.param)
+  # print(bp.param)
   X <- data.matrix(signatureMatrix)
   Yorig <- data.matrix(expressionMatrix)
   ##No Idea why
@@ -154,10 +154,11 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
 #This function perform the decovolution of the signatureMatrix over the gene expression subject matrix.
 
 ## Returns:
+  bp.param <- BiocParallel::bpparam()
   
   .ncores = ifelse(useCores > parallel::detectCores(), parallel::detectCores()-1, useCores)
   
-  
+  BiocParallel::bpworkers(bp.param) <- .ncores
   ###bla bla bla
   nullDist <- match.arg(nullDist)
   if(verbose) {
@@ -208,9 +209,9 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
     expressionMatrix <- data.matrix(expressionMatrix)
     if(verbose) cat("\nPopulation based null distribution\n")
     if(verbose) cat("\nBuilding random population\n")
-        M.aux <- do.call(cbind, mclapply(1:iter, function(i) {
+        M.aux <- do.call(cbind, BiocParallel::bplapply(1:iter, function(i) {
         as.vector(expressionMatrix)[sample(nrow(expressionMatrix)*ncol(expressionMatrix), size = nrow(expressionMatrix))]
-      }, mc.cores = .ncores  ))
+      }, BPPARAM = bp.param  ))
       
   
    rownames(M.aux) <- rownames(expressionMatrix)
@@ -541,7 +542,13 @@ LoadMixtureResultsFromExcel <- function(path){
 
 #Graphics functions----------
 ## Under development!!
-ProportionsBarPlot <- function(obj, type = c("proportion", "absolute") ){
+#' ProportionPlot
+#' a bar plot for each subject displaying the cell type proportions 
+#' 
+#' @param obj a MIXTURE object, see \code{\link{LoadMixtureResultsFromExcel}}
+#' @seealso \code{\link{LoadMixtureResultsFromExcel}}
+#' @export
+ProportionPlot <- function(obj ){
   # type <- match.arg(type)
   # matrix <- GetMixture(obj, type)
   # 
@@ -551,7 +558,7 @@ ProportionsBarPlot <- function(obj, type = c("proportion", "absolute") ){
   #                  subj = rep(rownames(matrix), each = ncol(matrix)))
   # ggplot(data=df, aes(x=subj, y=p, fill=ctype)) +
     # geom_bar(stat="identity")
-  m.mix <- GetMixture(obj, type)
+  m.mix <- GetMixture(obj)
   # print(ncol(signature$Mat))
   df.test <- data.frame(b = as.vector(t(m.mix)), 
                         ct = rep(colnames(m.mix),nrow(m.mix)),

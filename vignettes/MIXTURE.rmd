@@ -1,0 +1,109 @@
+---
+title: 'MIXTURE     '
+date: "18/08/2020"
+output: pdf_document
+---
+A noise constrained Recursive Feature Extraction algorithm for robust deconvolution of cell-types mixture from molecular signatures
+
+Since the significant impact of immunotherapy in cancer, the estimation of the immune cell-type proportions present in a tumor becomes crucial. Currently, the deconvolution of the cell mixture content of a tumor is carried out by different analytic tools, yet the accuracy of inferred cell type proportions has room for improvement. We improve tumor immune environment characterization developing MIXTURE, an analytical method based on a noise constrained recursive variable selection for a support vector regression
+
+```{r setup, include}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+# How to install MIXTURE
+```
+install.packages("devtools")
+library(devtools)
+install_github("elmerfer/MIXTURE")
+```
+
+# Testing MIXTURE in a SelfTest
+```{r ejemplo, echo TRUE}
+library(MIXTURE)
+##Load signature matrix
+data(LM22)
+##  Run the self test on LM22 signature
+mix.test <- MIXTURE(expressionMatrix = LM22,          #N x ncol(signatureMatrix) gene expresion matrix to evaluate 
+                                                      ##rownames(M) should be the GeneSymbols
+              signatureMatrix = LM22,                 #the gene signature matrix (W) such that M = W*betas' 
+                                                      #(i.e the LM22 from Newman et al)
+              # iter = 10,                            #iterations for the statistical test (null distribution)
+              functionMixture = nu.svm.robust.RFE,    #cibersort, nu.svm.robust.rfe, ls.rfe.abbas, 
+              useCores = 10L,                         #cores for parallel processing/ if using windows set to 1
+              verbose = TRUE,                         #TRUE or FALSE messages  
+              nullDist = "PopulationBased"           #"none" or "PopulationBased" if the statistical test should
+                                                      #be performed
+                                                      )    #EXCEL file name to stare the results 
+# Showing the predicted proportions
+head(GetMixture(mix.test)[,1:3])
+# Showing the predicted absolute coefficients
+head(GetMixture(mix.test, type = "absolute")[,1:3])
+# Showing the slots names of the MIXTURE object
+names(mix.test)
+```
+
+## How to test a new signature matrix with MIXTURE algorithm?
+```{r SlefTest, echo TRUE}
+# Load the TIL10 signature from Finotello et al.
+data(TIL10)
+# Signature Format
+head(TIL10)
+SelfTest(TIL10)
+
+# Run the MIXTURE on simulated samples built from the given signature
+res <- SimulationTest(signatureMatrix = TIL10, maxCoefs = 6, maxSamples = 100, noisy = TRUE, useCores=3L)
+# Getting simulated data
+# Simulated Samples
+dim(res$SimulatedData$M)
+head(res$SimulatedData$M[, 1:4])
+#Simulated betas (coefficients)
+head(res$SimulatedData$B)
+
+#Retrieving MIXTURE results
+dim(GetMixture(res$MIXTURE))
+
+# Displaying the cell type proportions
+ProportionPlot(res$MIXTURE)
+
+```
+# How to Download CDC1000 pure cell lines data
+```{r cell lines, eval = FALSE}
+library(data.table)
+library(openxlsx)
+library(org.Hs.eg.db)
+library(limma)
+
+#download and unzip expression from
+url <- "https://www.cancerrxgene.org/gdsc1000/GDSC1000_WebResources//Data/preprocessed/Cell_line_RMA_proc_basalExp.txt.zip"
+fname <- basename(url)
+download.file(url  =  url, destfile = fname, method = "auto")
+unzip(fname)
+
+#load expression matrix
+a.data<- fread("Cell_line_RMA_proc_basalExp.txt")
+
+#update annotation
+b.annot<- a.data[,1:2]
+colnames(b.annot)<- c("symbol", "name")
+columns(org.Hs.eg.db)
+b.entrezids <- mapIds(org.Hs.eg.db, keys=b.annot$symbol, column="ENTREZID", keytype="SYMBOL", multiVals="first")
+b.entrezids[sapply(b.entrezids, is.null)]<- NA
+b.annot$entrezid<- unlist(b.entrezids)
+
+#fix colnames
+colnames(a.data)<- gsub("DATA.", "", colnames(a.data))
+
+#make elist
+b.elist<- new("EList", list(E=a.data[,-c(1,2)], genes= b.annot))
+dim(b.elist)
+
+#remove missing entrezid
+b.elist<- b.elist[which(!is.na(b.elist$genes$entrezid)),]
+
+#combine repeated entrezid expression
+b.elist<- avereps(x = b.elist, ID = b.elist$genes$entrezid)
+
+saveRDS(b.elist, file = "data/celllines.rds")
+```
+

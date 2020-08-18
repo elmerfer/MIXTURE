@@ -47,6 +47,8 @@ SimulatedMixtures <- function(signatureMatrix, maxCoefs, maxSamples, noisy = TRU
     }, Mat = data.matrix(signatureMatrix), nrep = maxCoefs)
   M <- do.call(cbind, lapply(betas.list, function(x) x$A)) 
   B <- do.call(rbind, lapply(betas.list, function(x) x$beta))
+  colnames(B) <- colnames(signatureMatrix)
+  colnames(M) <- paste("Sim",1:ncol(M),sep="")
   return(invisible(list(M=M,B=B)))
 }
 
