@@ -7,10 +7,6 @@ A noise constrained Recursive Feature Extraction algorithm for robust deconvolut
 
 Since the significant impact of immunotherapy in cancer, the estimation of the immune cell-type proportions present in a tumor becomes crucial. Currently, the deconvolution of the cell mixture content of a tumor is carried out by different analytic tools, yet the accuracy of inferred cell type proportions has room for improvement. We improve tumor immune environment characterization developing MIXTURE, an analytical method based on a noise constrained recursive variable selection for a support vector regression
 
-```{r setup, include}
-knitr::opts_chunk$set(echo = TRUE)
-
-```
 # How to install MIXTURE
 ```
 install.packages("devtools")
@@ -18,23 +14,24 @@ library(devtools)
 install_github("elmerfer/MIXTURE")
 ```
 
-# Testing MIXTURE in a SelfTest
+## Running MIXTURE
+In this example we will use the LM22 signature matrix as a 22 subject expression matrix cohort
 ```{r ejemplo, echo TRUE}
 library(MIXTURE)
 ##Load signature matrix
 data(LM22)
 ##  Run the self test on LM22 signature
-mix.test <- MIXTURE(expressionMatrix = LM22,          #N x ncol(signatureMatrix) gene expresion matrix to evaluate 
+mix.test <- MIXTURE(expressionMatrix = LM22,          #N x ncol(signatureMatrix) gene expression 
+                                                      ##matrix to evaluate 
                                                       ##rownames(M) should be the GeneSymbols
-              signatureMatrix = LM22,                 #the gene signature matrix (W) such that M = W*betas' 
+              signatureMatrix = LM22,                 #the gene signature matrix (W) such that 
+                                                      ##M = W*betas' 
                                                       #(i.e the LM22 from Newman et al)
-              # iter = 10,                            #iterations for the statistical test (null distribution)
               functionMixture = nu.svm.robust.RFE,    #cibersort, nu.svm.robust.rfe, ls.rfe.abbas, 
-              useCores = 10L,                         #cores for parallel processing/ if using windows set to 1
+              useCores = 10L,                         #cores for parallel processing
               verbose = TRUE,                         #TRUE or FALSE messages  
-              nullDist = "PopulationBased"           #"none" or "PopulationBased" if the statistical test should
-                                                      #be performed
-                                                      )    #EXCEL file name to stare the results 
+              nullDist = "PopulationBased" 
+              ) 
 # Showing the predicted proportions
 head(GetMixture(mix.test)[,1:3])
 # Showing the predicted absolute coefficients
@@ -43,8 +40,10 @@ head(GetMixture(mix.test, type = "absolute")[,1:3])
 names(mix.test)
 ```
 
-## How to test a new signature matrix with MIXTURE algorithm?
+# How to performe a molecular signature SelfTest analysis with MIXTURE ?
+A self test analysis is intended to evaluate if the signature profiles can be accuratly predicted by using MIXTURE. This means that each signature profiles (Columns) will be assumed as a pure cell mixture profile, thus, the algorithm should only provide one coefficients as being 1 for each signature profile
 ```{r SlefTest, echo TRUE}
+library(MIXTURE)
 # Load the TIL10 signature from Finotello et al.
 data(TIL10)
 # Signature Format
@@ -52,7 +51,11 @@ head(TIL10)
 SelfTest(TIL10)
 
 # Run the MIXTURE on simulated samples built from the given signature
-res <- SimulationTest(signatureMatrix = TIL10, maxCoefs = 6, maxSamples = 100, noisy = TRUE, useCores=3L)
+res <- SimulationTest(signatureMatrix = TIL10, 
+                      maxCoefs = 6, #maximum number of cell types to include in the mixture (from 2 to maxCoefs)
+                      maxSamples = 100, 
+                      noisy = TRUE, #Add a noisy profile to the simulated pure mix
+                      useCores=3L)
 # Getting simulated data
 # Simulated Samples
 dim(res$SimulatedData$M)
@@ -67,7 +70,7 @@ dim(GetMixture(res$MIXTURE))
 ProportionPlot(res$MIXTURE)
 
 ```
-# How to Download CDC1000 pure cell lines data
+## How to Download CDC1000 pure cell lines data to test the MIXTURE algorithm ?
 ```{r cell lines, eval = FALSE}
 library(data.table)
 library(openxlsx)
@@ -75,8 +78,10 @@ library(org.Hs.eg.db)
 library(limma)
 
 #download and unzip expression from
-url <- "https://www.cancerrxgene.org/gdsc1000/GDSC1000_WebResources//Data/preprocessed/Cell_line_RMA_proc_basalExp.txt.zip"
+url <- "https://www.cancerrxgene.org/gdsc1000/GDSC1000_WebResources/
+/Data/preprocessed/Cell_line_RMA_proc_basalExp.txt.zip"
 fname <- basename(url)
+# this will save the downloaded file in your working directory
 download.file(url  =  url, destfile = fname, method = "auto")
 unzip(fname)
 
@@ -87,7 +92,8 @@ a.data<- fread("Cell_line_RMA_proc_basalExp.txt")
 b.annot<- a.data[,1:2]
 colnames(b.annot)<- c("symbol", "name")
 columns(org.Hs.eg.db)
-b.entrezids <- mapIds(org.Hs.eg.db, keys=b.annot$symbol, column="ENTREZID", keytype="SYMBOL", multiVals="first")
+b.entrezids <- mapIds(org.Hs.eg.db, keys=b.annot$symbol, column="ENTREZID", 
+                      keytype="SYMBOL", multiVals="first")
 b.entrezids[sapply(b.entrezids, is.null)]<- NA
 b.annot$entrezid<- unlist(b.entrezids)
 
@@ -103,7 +109,78 @@ b.elist<- b.elist[which(!is.na(b.elist$genes$entrezid)),]
 
 #combine repeated entrezid expression
 b.elist<- avereps(x = b.elist, ID = b.elist$genes$entrezid)
+# this will save the cell lines gene expression matrix in your working directory
+saveRDS(b.elist, file = "celllines.rds")
+```
+Once the file has been downloaded and stored in your hard disk, the you can proceed to analyze
 
-saveRDS(b.elist, file = "data/celllines.rds")
+```{r cell lines analysis, eval = TRUE}
+# we will run over the first 10 cell lines
+library(limma)
+library(MIXTURE)
+cells <- readRDS("celllines.rds")
+# gene expression cell line data is in log2 scale
+# so we anti log the data
+M <- 2^cells$E 
+
+cn <- colnames(cells$E)
+cn[1:10]
+rownames(M) <- cells$genes$symbol
+# we will only process the first ten cell lines
+cells.mix <- MIXTURE(expressionMatrix = M[, 1:10], signatureMatrix =  LM22, useCores = 3L)
+head(GetMixture(cells.mix))
 ```
 
+## How to process TCGA Data ?
+
+```{r TCGA, eval = FALSE}
+#Download FPKM data with TCGAbioLinks
+library(TCGAbiolinks)
+library(SummarizedExperiment)
+
+query_all_brca_fpkm <- GDCquery(project = "TCGA-BRCA",
+                             data.category = "Transcriptome Profiling",
+                             data.type = "Gene Expression Quantification", 
+                             experimental.strategy = "RNA-Seq",
+                             workflow.type = "HTSeq - FPKM")
+ 
+GDCdownload(query_all_brca_fpkm)
+data_all_brca_fpkm <- GDCprepare(query_all_brca_fpkm, save = TRUE, save.filename = "BRCA.All.FPKM.rda")
+##Chage the directory according to wahre you save your downloaded data
+```
+```{r path BRCA.TCGA, eval = TRUE, echo = FALSE}
+path <- "/home/elmer/Dropbox/IDEAS/cibersort/MIXTURE/"
+library(TCGAbiolinks)
+library(SummarizedExperiment)
+
+```
+```{r BRCA.TCGA, eval = TRUE}
+#set path where your BRCA.All.FPKM.rda is located
+load(file.path(path,"BRCA.All.FPKM.rda"))
+ 
+ # Prepare your gene expression data matrix
+ gene_annot_all <- rowData(data)
+ exp.all <- assay(data)
+ target.data.all <- as.data.frame(colData(data))
+ tumor.type <- do.call(rbind,str_split(as.character(target.data.all$barcode),"-"))
+ # Tissue type distribution
+ table(tumor.type[,4])
+ rownames(exp.all)[1:10]
+ # only ensembl gene ids
+ exp.all <- exp.all[gene_annot_all$ensembl_gene_id,]
+ #MIXTURE use rownames to identify genes and macth with the molecular signature
+ rownames(exp.all) <- gene_annot_all$external_gene_name
+ rownames(exp.all)[1:10]
+ #an E list from limma package
+ a.data <- new("EList",list(E = exp.all, genes = gene_annot_all, targets = target.data.all))
+ a.data$targets$TissueType <- do.call(rbind,str_split(as.character(target.data.all$barcode),"-"))[,4]
+ # processing with MIXTURE
+ brca.mix <- MIXTURE(expressionMatrix = a.data$E, signatureMatrix =  LM22, useCores = 6L)
+ 
+ round(apply(GetMixture(brca.mix),2,function(x) sum(x>0))/nrow(GetMixture(brca.mix)),2)
+ brca.prop <- GetMixture(brca.mix)
+ df <- data.frame(Proportions = c(brca.prop), CellTypes = rep(colnames(brca.prop), each = nrow(brca.prop)))
+ 
+ ggplot(df,aes(x=CellTypes, y=Proportions, fill = CellTypes)) +  geom_boxplot(outlier.size = 0.7) + 
+   theme(axis.text.x = element_text(angle=45, vjust = 1,hjust = 1))
+ ```

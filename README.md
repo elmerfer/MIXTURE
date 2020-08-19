@@ -26,7 +26,7 @@ install_github("elmerfer/MIXTURE")
 
 ## Running MIXTURE
 
-This example tends to estimate the same pure cell-types from LM22 signature matrix from [Newman et al.](http://www.nature.com/nmeth/journal/v12/n5/abs/nmeth.3337.html). The LM22 matrix was stored as an RData obj here for convinience
+This example tends to estimate the same pure cell-types from LM22 signature matrix from [Newman et al.](http://www.nature.com/nmeth/journal/v12/n5/abs/nmeth.3337.html). The LM22 matrix was stored as an RData obj for convinience and provided as data
 ```
 library(MIXTURE)
 ##Load signature matrix
@@ -48,6 +48,9 @@ save(mix.test, file = "MIXTURE_FILE_LM22.RData") #save full list as an RData obj
 
 ```
 
+### Documentation
+[MIXTURE vignette](https://github.com/elmerfer/MIXTURE/blob/master/vignettes/MIXTURE.pdf)
+
 ## Authors
 
 * **Elmer Andrés Fernández** - *Initial work* - [Profile](https://www.researchgate.net/profile/Elmer_Fernandez) - [CIDIE]- [CONICET](http://www.conicet.gov.ar) - [UCC](http://www.ucc.edu.ar)
@@ -56,7 +59,7 @@ save(mix.test, file = "MIXTURE_FILE_LM22.RData") #save full list as an RData obj
 ## Collaborators
 * **Dario Rocha** -- - *Testing and application on TCGA Data
 * **Yamil Mahamoud** -- IBYME-CONICET. Application on Cancer immunotherapy
-* **Joaquin Merlo ** -- IBYME-CONICET. Application on Cancer immunotherapy
+* **Joaquin Merlo** -- IBYME-CONICET. Application on Cancer immunotherapy
 
 ## How to cite
 
