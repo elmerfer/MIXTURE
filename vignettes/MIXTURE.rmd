@@ -49,7 +49,10 @@ data(TIL10)
 # Signature Format
 head(TIL10)
 SelfTest(TIL10)
+```
 
+# How to generate simulated mixture profiles from a molecular signature and test MIXTURE algorithm ?
+```{r SimfTest, echo TRUE}
 # Run the MIXTURE on simulated samples built from the given signature
 res <- SimulationTest(signatureMatrix = TIL10, 
                       maxCoefs = 6, #maximum number of cell types to include in the mixture (from 2 to maxCoefs)
@@ -70,7 +73,8 @@ dim(GetMixture(res$MIXTURE))
 ProportionPlot(res$MIXTURE)
 
 ```
-## How to Download CDC1000 pure cell lines data to test the MIXTURE algorithm ?
+
+# How to Download CDC1000 pure cell lines data to test the MIXTURE algorithm ?
 ```{r cell lines, eval = FALSE}
 library(data.table)
 library(openxlsx)
