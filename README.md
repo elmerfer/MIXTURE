@@ -50,6 +50,7 @@ save(mix.test, file = "MIXTURE_FILE_LM22.RData") #save full list as an RData obj
 
 ### Documentation
 [MIXTURE vignette](https://github.com/elmerfer/MIXTURE/blob/master/vignettes/MIXTURE.pdf)
+[Wiki](https://github.com/elmerfer/MIXTURE/wiki)
 
 ## Authors
 
