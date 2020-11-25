@@ -87,3 +87,41 @@ NULL
 #' @references \url{https://static-content.springer.com/esm/art%3A10.1186%2Fs12920-019-0613-5/MediaObjects/12920_2019_613_MOESM2_ESM.xlsx}
 NULL
 
+#' immuCC
+#' 
+#' A dataset containing the mouse molecular signature profile of 25 cell typoes taken from
+#' [Chen, Z. et al.](https://www.nature.com/articles/srep40508) 
+#' \itemize{
+#' \item Mast.Cells 
+#' \item Neutrophil.Cells
+#' \item Eosinophil.Cells
+#' \item B.Cells.Memory
+#' \item B.Cells.Naive
+#' \item Plasma.Cells
+#' \item T.Cells.CD8.Actived
+#' \item T.Cells.CD8.Naive
+#' \item T.Cells.CD8.Memory
+#' \item M0.Macrophage
+#' \item M1.Macrophage
+#' \item M2.Macrophage
+#' \item Treg.Cells
+#' \item T.Cells.CD4.Memory
+#' \item T.Cells.CD4.Naive
+#' \item T.Cells.CD4.Follicular
+#' \item Th1.Cells
+#' \item Th17.Cells
+#' \item Th2.Cells
+#' \item Monocyte
+#' \item GammaDelta.T.Cells
+#' \item NK.Resting
+#' \item NK.Actived
+#' \item DC.Actived
+#' \item DC.Immature
+#' }
+#' @docType data
+#' @keywords datasets
+#' @name ImmuCC
+#' @usage data(ImmuCC)
+#' @format A data frame with 511 rows (genes) and 25 variables (cell types). The rownames contains the GeneSymbols and the colnames the cell types
+NULL
+
