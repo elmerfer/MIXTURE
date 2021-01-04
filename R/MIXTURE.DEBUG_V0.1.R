@@ -201,7 +201,7 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
     if(verbose) cat("\nfinish\n")
     metrix <- do.call(function(...) abind(along = 3,... ), lapply(out.l, function(x) x))
     
-    out.list <- list(Subjects = Orig,PermutedMetrix = metrix, method = "SingleSubjectTest", , usedGenes = .list.of.genes)
+    out.list <- list(Subjects = Orig,PermutedMetrix = metrix, method = "SingleSubjectTest", usedGenes = .list.of.genes)
     #return(list(Subjects = Orig,PermutedMetrix = metrix, method = "SingleSubjectTest"))#, pvalue = pvalues))  
   }
   
@@ -320,7 +320,7 @@ GetMetrics <- function(obj, metric = c("all","RMSE", "R"), type = c("proportion"
   ##Returns:
   ## if "all" : ACCmetric matrix, otherwise see GetRMSE or GetCorrelation
   
-  metrix <- match.arg(metric)
+  metric <- match.arg(metric)
   
   switch(metric,
          all = return(obj$Subject$ACCmetric),
@@ -561,7 +561,7 @@ ProportionPlot <- function(obj ){
   m.mix <- GetMixture(obj)
   # print(ncol(signature$Mat))
   df.test <- data.frame(b = as.vector(t(m.mix)), 
-                        ct = rep(colnames(m.mix),nrow(m.mix)),
+                        ct = factor(rep(colnames(m.mix),nrow(m.mix))),
                         sbj = factor(rep(rownames(m.mix),each=ncol(m.mix)), 
                                      levels = rownames(m.mix))) 
   col.cel.types <- c("chocolate1", "brown4", "black",
@@ -577,7 +577,7 @@ ProportionPlot <- function(obj ){
   ggplot(df.test, aes(sbj, b)) +   geom_col(aes(fill=ct)) + 
     scale_fill_manual(values  = as.character(colores[levels(df.test$ct),2])) + 
     theme(axis.text.x = element_text(angle = 90))+ 
-    xlab("Subjects") + ylab("Proportions")
+    xlab("Subjects") + ylab("Proportions") + labs(fill = "Cell Type")
   }
 
 
