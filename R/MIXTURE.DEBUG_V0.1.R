@@ -546,39 +546,66 @@ LoadMixtureResultsFromExcel <- function(path){
 #' a bar plot for each subject displaying the cell type proportions 
 #' 
 #' @param obj a MIXTURE object, see \code{\link{LoadMixtureResultsFromExcel}}
+#' @param sortBy character indicating the cell type used to sort the profiles along the proportion plot (mutually exclusive with subjOrder). It should match one of the cell type names.
+#' @param subjOrder an indexing vector to order the subject along the proportion plot (mutually exclusive with sortBy)
 #' @seealso \code{\link{LoadMixtureResultsFromExcel}}
 #' @export
-ProportionPlot <- function(obj ){
-  # type <- match.arg(type)
-  # matrix <- GetMixture(obj, type)
-  # 
-  # if(is.null(colnames(matrix)) | is.null(rownames(matrix)) ) stop("Error col/row NULL")
-  # df <- data.frame(p = as.vector(matrix), 
-  #                  ctype = rep(colnames(matrix), nrow(matrix)), 
-  #                  subj = rep(rownames(matrix), each = ncol(matrix)))
-  # ggplot(data=df, aes(x=subj, y=p, fill=ctype)) +
-    # geom_bar(stat="identity")
+#' @return it return a ggplot object 
+#' see vignette for examples
+ProportionPlot <- function(obj , sortBy, subjOrder){
+  if(all(c(!missing(sortBy),!missing(subjOrder) ) ) ){
+    stop("Error: only sortBy or subjOrder is allowed")
+  }
+  
   m.mix <- GetMixture(obj)
-  # print(ncol(signature$Mat))
-  df.test <- data.frame(b = as.vector(t(m.mix)), 
-                        ct = factor(rep(colnames(m.mix),nrow(m.mix))),
-                        sbj = factor(rep(rownames(m.mix),each=ncol(m.mix)), 
-                                     levels = rownames(m.mix))) 
+  
+  
   col.cel.types <- c("chocolate1", "brown4", "black",
                      "tan1","green4", "green2", "lawngreen", "olivedrab3", "olivedrab", "chartreuse4",
                      "goldenrod","gold4","yellow","violetred","orangered1","red",
                      "plum4","plum","navy","mediumblue","cyan",
                      "grey28")
   col.cel.types <- col.cel.types[1:ncol(m.mix)]
+  colores <- data.frame(CT=as.character(unique(colnames(m.mix))), Colores=col.cel.types)
+  # print(ncol(signature$Mat))
   
-  colores <- data.frame(CT=as.character(unique(df.test$ct)), Colores=col.cel.types)
+  if(missing(subjOrder)==FALSE){
+    if(length(subjOrder)!=nrow(m.mix)){
+      stop("Error: colOrder should have the same length as nrow(GetMixture(obj))")
+    }
+    m.mix <- m.mix[subjOrder,]
+  }
+  
+  if(missing(sortBy)){
+    
+    df.test <- data.frame(b = as.vector(t(m.mix)), 
+                          ct = factor(rep(colnames(m.mix),nrow(m.mix))),
+                          sbj = factor(rep(rownames(m.mix),each=ncol(m.mix)), 
+                                       levels = rownames(m.mix)))   
+  }else{
+    cn <- colnames(m.mix)
+    sortBy <- match.arg(sortBy, cn)
+    ord <- order(m.mix[,sortBy])
+    
+    id.sb <- which(stringr::str_detect(cn, sortBy))
+    cn <- c(sortBy,cn[-id.sb])
+    m.mix <- m.mix[ord,cn]
+    df.test <- data.frame(b = as.vector(t(m.mix)), 
+                          ct = factor(rep(cn,nrow(m.mix)), levels = unique(cn)),
+                          sbj = factor(rep(rownames(m.mix),each=ncol(m.mix)), 
+                                       levels = rownames(m.mix)))     
+  }
+  
+  
+  
+  # colores <- data.frame(CT=as.character(unique(df.test$ct)), Colores=col.cel.types)
   rownames(colores) <- colores[,1]
   
-  ggplot(df.test, aes(sbj, b)) +   geom_col(aes(fill=ct)) + 
-    scale_fill_manual(values  = as.character(colores[levels(df.test$ct),2])) + 
+  ggplot(df.test, aes(sbj, b, fill = ct)) +   geom_col() + 
+    scale_fill_manual("Cell Type",breaks = colores[levels(df.test$ct),1], values  = colores[levels(df.test$ct),2]) + 
     theme(axis.text.x = element_text(angle = 90))+ 
-    xlab("Subjects") + ylab("Proportions") + labs(fill = "Cell Type")
-  }
+    xlab("Subjects") + ylab("Proportions") 
+}
 
 
 

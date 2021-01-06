@@ -70,8 +70,10 @@ head(res$SimulatedData$B)
 dim(GetMixture(res$MIXTURE))
 
 # Displaying the cell type proportions
-ProportionPlot(res$MIXTURE)
-
+p <- ProportionPlot(res$MIXTURE)
+p
+# Since ProportionPlot returns a ggplot object, we can change the characteristics of the plot beyond those relative to the bars and colors.
+p + theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust=0.5))
 ```
 
 # How to Download CDC1000 pure cell lines data to test the MIXTURE algorithm ?

@@ -5,10 +5,18 @@
 \title{ProportionPlot
 a bar plot for each subject displaying the cell type proportions}
 \usage{
-ProportionPlot(obj)
+ProportionPlot(obj, sortBy, subjOrder)
 }
 \arguments{
 \item{obj}{a MIXTURE object, see \code{\link{LoadMixtureResultsFromExcel}}}
+
+\item{sortBy}{character indicating the cell type used to sort the profiles along the proportion plot (mutually exclusive with subjOrder). It should match one of the cell type names.}
+
+\item{subjOrder}{an indexing vector to order the subject along the proportion plot (mutually exclusive with sortBy)}
+}
+\value{
+it return a ggplot object 
+see vignette for examples
 }
 \description{
 ProportionPlot
