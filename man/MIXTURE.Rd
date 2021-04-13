@@ -2,8 +2,7 @@
 % Please edit documentation in R/MIXTURE.DEBUG_V0.1.R
 \name{MIXTURE}
 \alias{MIXTURE}
-\title{MIXTURE
-the MIXTURE algorithm. It solves Y = X*B estimating the B coefficients or cell type proportions (B>0)}
+\title{MIXTURE}
 \usage{
 MIXTURE(
   expressionMatrix,
@@ -52,6 +51,5 @@ Subjects        : a list with the following slots:
  usedGenes       : the intersection gene list between expressionMatrix and signatureMatrix
 }
 \description{
-MIXTURE
-the MIXTURE algorithm. It solves Y = X*B estimating the B coefficients or cell type proportions (B>0)
+the MIXTURE algorithm solves Y = X*B estimating the B coefficients or cell type proportions (B>0)
 }

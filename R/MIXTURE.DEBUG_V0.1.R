@@ -2,7 +2,7 @@
 ##Author: Elmer A. Fernández
 ## Institution : CIDIE - CONICET - UCC
 ## Version : 0.1
-## Date: 07/01/2019
+## Date: 13/04/2020
 ## Last Changes:
 ##it is on GitHub
 ##CHANGES: 
@@ -10,6 +10,7 @@
 
 
 .debug <- TRUE
+.version <- 1.0
 
 is.debug <- function(.stop = FALSE){
   if(.debug){
@@ -118,7 +119,8 @@ library(openxlsx)
 ##PermutationNUll---------
 ##Main function
 #' MIXTURE
-#' the MIXTURE algorithm. It solves Y = X*B estimating the B coefficients or cell type proportions (B>0)
+#' 
+#' the MIXTURE algorithm solves Y = X*B estimating the B coefficients or cell type proportions (B>0)
 #' @param expressionMatrix a GxS gene expression matrix. with row names genes ID as in the signature Matrix. Genes in rows, samples in columns
 #' @param signatureMatrix a NxL gene signature matrix for L cell types
 #' @param iter integer, number of iterations to estimate the p values
@@ -155,7 +157,7 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
 
 ## Returns:
   bp.param <- BiocParallel::bpparam()
-  
+  cat(paste0("\nMIXTURE version ",.version))
   .ncores = ifelse(useCores > parallel::detectCores(), parallel::detectCores()-1, useCores)
   
   BiocParallel::bpworkers(bp.param) <- .ncores
@@ -164,8 +166,20 @@ MIXTURE <- function(expressionMatrix , signatureMatrix, iter = 100, functionMixt
   if(verbose) {
     cat("\nRunning...\n")
   }
-  
+  if(missing(signatureMatrix)){
+    cat(paste0("\nLoading LM22 signature matrix"))
+    data("LM22")
+    signatureMatrix <- LM22
+  }else{
+    cat(paste0("\nProvided signature matrix"))
+  }
+  cat(paste0(" ",nrow(signatureMatrix)," genes and ", ncol(signatureMatrix)," cell types"))
   .list.of.genes <- rownames(expressionMatrix)[which((rownames(expressionMatrix) %in% rownames(signatureMatrix)))]
+  
+  if(length(.list.of.genes)<20){
+    stop(paste0("ERRORless than 20 genes in common with signatureMatrix"))
+  }
+  cat(paste0("\nOverlapping genes : ", length(.list.of.genes)," (",round(100*length(.list.of.genes)/nrow(signatureMatrix),2),"%)"))
   
   ##compute the deconvolution onto the original samples
   Orig <- .MIXER(expressionMatrix , signatureMatrix, functionMixture , useCores = .ncores)
