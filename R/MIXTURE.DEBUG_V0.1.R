@@ -1115,6 +1115,12 @@ nu.svm.robust.RFE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 7e-3, maxite
   #     Rp = correlation for proportional coeffs
   #     BestParams = optimal paramters for SVR
   #     Iter= number or reached iterations
+  if(all(is.nan(y))) {
+    return(list(Wa=rep(NA,ncol(X)), Wp = rep(NA,ncol(X)), RMSEa = NA, RMSEp= NA , Ra=NA, Rp=NA,  BestParams = NA, Iter=NA))
+  }
+  if(all(is.na(y))) {
+    return(list(Wa=rep(NA,ncol(X)), Wp = rep(NA,ncol(X)), RMSEa = NA, RMSEp= NA , Ra=NA, Rp=NA,  BestParams = NA, Iter=NA))
+  }
   wsel <- matrix(1, ncol=ncol(X), nrow=1)
   colnames(wsel) <- colnames(X)
   ok<- TRUE
