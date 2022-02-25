@@ -56,7 +56,7 @@ save(mix.test, file = "MIXTURE_FILE_LM22.RData") #save full list as an RData obj
 ## Authors
 
 * **Elmer Andrés Fernández** - *Initial work* - [Profile](https://www.researchgate.net/profile/Elmer_Fernandez) - [CIDIE]- [CONICET](http://www.conicet.gov.ar) - [UCC](http://www.ucc.edu.ar)
-
+* **Agustin Nava** -*Manteiner* - [CONICET](http://www.conicet.gov.ar)
 
 ## Collaborators
 * **Dario Rocha** -- - *Testing and application on TCGA Data
