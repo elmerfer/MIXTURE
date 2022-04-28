@@ -42,7 +42,7 @@ mix.test <- MIXTURE(expressionMatrix = LM22,          #N x ncol(signatureMatrix)
               verbose = TRUE,                         #TRUE or FALSE messages  
               nullDist = "PopulationBased",           #"none" or "PopulationBased" if the statistical test should
                                                       #be performed
-              fileSave = "MIXTURE_FILE_LM22.xlsx")    #EXCEL file name to stare the results 
+              fileSave = "MIXTURE_FILE_LM22.xlsx")    #EXCEL file name to store the results 
 
 save(mix.test, file = "MIXTURE_FILE_LM22.RData") #save full list as an RData object.
 
