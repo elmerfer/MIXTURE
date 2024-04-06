@@ -3,7 +3,7 @@
 A noise constrained Recursive Feature Extraction algorithm for robust deconvolution of cell-types mixture from molecular signatures
 
 Since the significant impact of immunotherapy in cancer, the estimation of the immune cell-type proportions present in a tumor becomes crucial. Currently, the deconvolution of the cell mixture content of a tumor is carried out by different analytic tools, yet the accuracy of inferred cell type proportions has room for improvement. We improve tumor immune environment characterization developing MIXTURE, an analytical method based on a noise constrained recursive variable selection for a support vector regression. Please Get the 
-[biorxiv 2018 manuscript](https://www.biorxiv.org/content/10.1101/726562v1) or the [Briefings in Bioinformatics 2020 manuscript](https://doi.org/10.1093/bib/bbaa317)
+[biorxiv 2018 manuscript](https://www.biorxiv.org/content/10.1101/726562v1) or the [Briefings in Bioinformatics 2020 manuscript](https://doi.org/10.1093/bib/bbaa317) and/or the [benchmark analysis in Journal of Biomedical Informatics 2023](https://www.sciencedirect.com/science/article/abs/pii/S1532046423001089?via%3Dihub)
 
 # NOTE: 
 
