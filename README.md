@@ -65,7 +65,9 @@ save(mix.test, file = "MIXTURE_FILE_LM22.RData") #save full list as an RData obj
 
 ## How to cite
 
-Unveiling the immune infiltrate modulation in cancer and response to immunotherapy by MIXTURE—an enhanced deconvolution method Elmer A Fernández, Yamil D Mahmoud, Florencia Veigas, Darío Rocha, Matías Miranda, Joaquín Merlo, Mónica Balzarini, Hugo D Lujan, Gabriel A Rabinovich, María Romina Girotti Briefings in Bioinformatics, bbaa317, https://doi.org/10.1093/bib/bbaa317 Published: 16 December 2020
+Unveiling the immune infiltrate modulation in cancer and response to immunotherapy by MIXTURE—an enhanced deconvolution method Elmer A Fernández, Yamil D Mahmoud, Florencia Veigas, Darío Rocha, Matías Miranda, Joaquín Merlo, Mónica Balzarini, Hugo D Lujan, Gabriel A Rabinovich, María Romina Girotti Briefings in Bioinformatics, bbaa317, [https://doi.org/10.1093/bib/bbaa317] Published: 16 December 2020
+
+Novel evaluation approach for molecular signature-based deconvolution methods. Agustín Nava, Daniela Alves da Quinta, Laura Prato, María Romina Girotti, Gabriel Moron, Andrea S. Llera, Elmer A. Fernández. May 2023, Journal of Biomedical Informatics 142(5):104387 [DOI: 10.1016/j.jbi.2023.104387](https://www.sciencedirect.com/science/article/abs/pii/S1532046423001089?via%3Dihub)
 
 
 ## License
