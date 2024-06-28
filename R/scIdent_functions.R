@@ -87,7 +87,7 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
     
     for (i in 1:pseudobulk) {
       selected <- sample(cluster_indices,round(cluster_size * pct))
-      bulk_subjects <- rowSums(data[,unique(selected)])
+      bulk_subjects <- Matrix::rowSums(data[,unique(selected)])
       cluster_pseudobulk[,i] <- bulk_subjects
     }
     results[[paste0("Cluster_", cluster)]] <- as.data.frame(cluster_pseudobulk)
