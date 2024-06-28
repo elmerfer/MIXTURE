@@ -1,3 +1,29 @@
+#' scIdent: Deconvolve Pseudobulk Samples from Single-Cell RNA-seq Data with MIXTURE
+#'
+#'
+#' @param SeuObj A Seurat object containing single-cell RNA-seq data.
+#' @param clusters_metadata Column name in `SeuObj@meta.data` with cluster assignments for each cell. Default is `NULL`, which uses `seurat_clusters` variable in `meta.data`.
+#' @param pseudobulk Number of pseudobulk samples to generate for each cluster. Default is 1.
+#' @param pct If 'pseudobulk' is greater than 1, percentage of cells to randomly select for each pseudobulk sample, between 0.1 and 0.9. Default is 1.
+#' @param ms_treshold Minimum similarity threshold for marker gene selection. Default is 0.09.
+#' @param sgmtx A matrix where rows are genes and columns are cell types, used as the molecular signature for deconvolution. Default is `LM22`.
+#' @param cores Number of CPU cores to use for computation. Default is 10. If using Windows, it must be set to 1.
+#' @param SeuratAssay The assay to use from the Seurat object. Default is "RNA".
+#' 
+#' @return A list containing the following dataframes:
+#' \describe{
+#'   \item{clust_idents}{A data frame with one row per analyzed cluster. Includes a column "MS_cluster" (1 if the cluster is composed of cell types in the molecular signature, 0 otherwise), and columns "ident_1", "ident_2", "ident_3" for the top three absolute coefficients of identified cell types in the cluster.}
+#'   \item{clust_abs}{Absolute coefficients estimated for each cluster. If `pseudobulk` > 1, retrieves the median of calculated absolute coefficients.}
+#'   \item{clust_props}{Normalized coefficients, interpretable as proportions.}
+#'   \item{sigOverlap}{Percentage of genes in the molecular signature with more than 0 counts in each pseudobulk sample.}
+#'   \item{statAbs}{If `pseudobulk` > 1, a data frame holding the median, IQR, first and third quartile, minimum and maximum absolute coefficients for cell types with a median higher than `ms_treshold`.}
+#' }
+#' 
+#' @details
+#' `scIdent` aggregates raw counts of cells within each cluster to create pseudobulk samples, and deconvolves them with MIXTURE. Users can specify the number of pseudobulk samples and the percentage of cells to include in each sample. Then, deconvolution with MIXTURE is performed, paired to any molecular signature, with the default being `LM22`. Multiple pseudobulk samples can be generated to assess the reliability of deconvolution estimations, allowing users to analyze variations among predictions.
+#' 
+#' @export
+
 scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, ms_treshold = 0.09, sgmtx = LM22, cores = 10L, SeuratAssay = "RNA") {
   if (!require("tidyverse", character.only = TRUE)) {
     install.packages(package, dependencies = TRUE)
@@ -174,9 +200,9 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
       mutate(cluster = gsub("\\*.*","",rownames(.))) %>% 
       mutate(cluster = gsub("Cluster_","",cluster)) %>% 
       mutate(cluster = substr(cluster, 1, nchar(cluster)-1)) %>% 
-      reshape2::melt(id.vars="cluster") %>%
+      reshape2::melt(id.vars="cluster",variable.name="celltypes") %>%
       mutate(value = ifelse(is.na(value),0,value)) %>% 
-      group_by(cluster,variable) %>% 
+      group_by(cluster,celltypes) %>% 
       dplyr::summarize(median = median(value),
                        IQR = IQR(value),
                        q1 = quantile(value,0.25),
@@ -185,8 +211,7 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
                        max = max(value)) %>% 
       filter(median != 0) %>% 
       arrange(cluster,dplyr::desc(median)) %>% 
-      filter(median >= ms_treshold) %>% 
-      rename("celltype" = `variable`)
+      filter(median >= ms_treshold)
     
   } else {NULL}
   normalize_nonzero <- function(x) {
@@ -210,12 +235,31 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
               cluster_abs = cluster_abs,
               cluster_props = cluster_props,
               sigOverlap = sigOverlap,
+              statAbs = statAbs,
               pseudobulk = pseudobulk,
               pct = pct,
               ms_treshold = ms_treshold,
               clusters_metadata = clusters_metadata))
 }
 
+#' clustHeatmap: Generate Heatmap of Cluster Coefficients
+#'
+#' This function generates a heatmap of cluster coefficients (absolute or normalized) from the output of `scIdent`.
+#'
+#' @param scIdentObj The output object from the `scIdent` function.
+#' @param coef A string indicating the type of coefficients to plot. Can be "abs" for absolute coefficients or "prop" for normalized coefficients. Default is "abs".
+#' 
+#' @return A ggplot object representing the heatmap of cluster coefficients.
+#' 
+#' @details
+#' `clustHeatmap` creates a heatmap using ggplot2, showing the coefficients for each cluster. The function can plot either absolute or normalized coefficients. 
+#' 
+#' @examples
+#' \dontrun{
+#' clustHeatmap(scIdentObj, coef = "abs")
+#' }
+#' 
+#' @export
 clustHeatmap <- function(scIdentObj, coef = "abs") {
   load_package <- function(package) {
     if (!require(package, character.only = TRUE)) {
@@ -269,6 +313,21 @@ clustHeatmap <- function(scIdentObj, coef = "abs") {
   suppressWarnings(print(p))
 }
 
+#' PlotDimCoef: Plot Dimensional Reduction with Cluster Coefficients
+#'
+#' This function plots dimensional reduction on a Seurat object with cluster coefficients (absolute or normalized).
+#'
+#' @param SeuratObj A Seurat object containing single-cell RNA-seq data.
+#' @param scIdentObj The output object from the `scIdent` function, containing deconvolution results.
+#' @param ms_celltypes A vector of cell types from the molecular signature to plot. Default is `NULL`, which plots all identified cell types.
+#' @param reduction The type of dimensional reduction to use (e.g., "pca", "tsne", "umap").
+#' @param coef A string indicating the type of coefficients to plot. Can be "abs" for absolute coefficients or "prop" for normalized coefficients. Default is "abs".
+#' @param ncol Number of columns for the facet wrap. Default is `NULL`.
+#' @param nrow Number of rows for the facet wrap. Default is `NULL`.
+#' 
+#' @return Plots of dimensional reduction with cluster coefficients for each celltype detected by MIXTURE.
+#' 
+#' @export
 PlotDimCoef <- function(SeuratObj, scIdentObj, ms_celltypes = NULL, reduction, coef = "abs", ncol = NULL, nrow = NULL) {
   load_package <- function(package) {
     if (!require(package, character.only = TRUE)) {
@@ -313,28 +372,4 @@ PlotDimCoef <- function(SeuratObj, scIdentObj, ms_celltypes = NULL, reduction, c
   p2 <- lapply(p1, function(x) suppressMessages(x + fix.sc))
   
   patchwork::wrap_plots(p2, ncol = ncol, nrow = nrow)
-}
-
-PlotDimIdent <- function(SeuratObj, scIdentObj, ident_col = "ident_1", reduction) {
-  load_package <- function(package) {
-    if (!require(package, character.only = TRUE)) {
-      install.packages(package, dependencies = TRUE)
-      library(package, character.only = TRUE)
-    }
-  }
-  
-  load_package("dplyr")
-  load_package("ggplot2")
-  
-  clust_label = scIdentObj$clusters_metadata
-  cellnames <- rownames(SeuratObj@meta.data)
-  
-  cluster_data <- scIdentObj$clust_idents[, names(scIdentObj$clust_idents) %in% c("cluster", ident_col)]
-  
-  SeuratObj@meta.data <- left_join(SeuratObj@meta.data,
-                                   cluster_data,
-                                   by = setNames("cluster", clust_label))
-  rownames(SeuratObj@meta.data) <- cellnames
-  
-  DimPlot(SeuratObj, reduction = reduction, group.by = ident_col)
 }
