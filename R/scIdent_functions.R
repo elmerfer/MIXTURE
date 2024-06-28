@@ -30,6 +30,11 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
     library(package, character.only = TRUE)
   }
   
+  if (!require("Matrix", character.only = TRUE)) {
+    install.packages(package, dependencies = TRUE)
+    library(package, character.only = TRUE)
+  }
+  
   if (!require("rlist", character.only = TRUE)) {
     install.packages(package, dependencies = TRUE)
     library(package, character.only = TRUE)
@@ -60,7 +65,7 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
     stop(paste0("The column '",clusters_metadata,"' is not present in the meta.data of the Seurat object."))
   }
   
-  data <- as.data.frame(SeuObj[[SeuratAssay]]$counts)
+  data <- SeuObj[[SeuratAssay]]$counts
   
   if (nrow(SeuObj@meta.data) != length(clusters)) {
     stop("'clusters' does not equal the number of cells in the dataset.")
