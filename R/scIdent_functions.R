@@ -186,7 +186,7 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
       filter(median != 0) %>% 
       arrange(cluster,dplyr::desc(median)) %>% 
       filter(median >= ms_treshold) %>% 
-      rename("celltype" = "variable")
+      rename("celltype" = `variable`)
     
   } else {NULL}
   normalize_nonzero <- function(x) {
