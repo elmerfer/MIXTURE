@@ -353,16 +353,16 @@ PlotDimCoef <- function(SeuratObj, scIdentObj, ms_celltypes = NULL, reduction, c
   clust_label = scIdentObj$clusters_metadata
   cellnames <- rownames(SeuratObj@meta.data)
   
+  ms_celltypes <- if (is.null(ms_celltypes)) {unique((reshape2::melt(scIdentObj$cluster_abs,id.vars="cluster") %>% 
+                                                        filter(value > 0) %>% 
+                                                        mutate(variable = as.character(variable)))$variable)
+  } else {ms_celltypes}
+  
   cluster_data <- if (coef == "abs") {
     scIdentObj$cluster_abs[, names(scIdentObj$cluster_abs) %in% c("cluster", ms_celltypes)]
   } else {
     scIdentObj$cluster_props[, names(scIdentObj$cluster_props) %in% c("cluster", ms_celltypes)]
   }
-  
-  ms_celltypes <- if (is.null(ms_celltypes)) {unique((reshape2::melt(scIdentObj$cluster_abs,id.vars="cluster") %>% 
-                                                        filter(value > 0) %>% 
-                                                        mutate(variable = as.character(variable)))$variable)
-  } else {ms_celltypes}
   
   ms_coef_max <- reshape2::melt(cluster_data, id.vars = "cluster")
   ms_coef_max <- max(ms_coef_max$value)
