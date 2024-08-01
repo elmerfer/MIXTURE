@@ -351,6 +351,7 @@ PlotDimCoef <- function(SeuratObj, scIdentObj, ms_celltypes = NULL, reduction, c
   }
   
   clust_label = scIdentObj$clusters_metadata
+  SeuratObj@meta.data[[clust_label]] <- as.character(SeuratObj@meta.data[[clust_label]])
   cellnames <- rownames(SeuratObj@meta.data)
   
   ms_celltypes <- if (is.null(ms_celltypes)) {unique((reshape2::melt(scIdentObj$cluster_abs,id.vars="cluster") %>% 
