@@ -120,7 +120,7 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
   deconv_rs <- MIXTURE(expressionMatrix = exp_pseudobulk,
                        signatureMatrix = sgmtx,
                        iter = 0L,
-                       functionMixture = nu.svm.robust.RFE,
+                       functionMixture = scIdent_MIXTURE,
                        useCores = cores)
   
   if (pseudobulk != 1) {
@@ -349,7 +349,7 @@ PlotDimCoef <- function(SeuratObj, scIdentObj, ms_celltypes = NULL, reduction, c
   if (!(coef %in% c("abs", "prop"))) {
     stop("Invalid 'coef'. Choose either 'abs' or 'prop'.")
   }
-  
+  if (!is.null(scIdentObj$SOM_clust)){SeuratObj$SOM_clust <- scIdentObj$SOM_clust}
   clust_label = scIdentObj$clusters_metadata
   SeuratObj@meta.data[[clust_label]] <- as.character(SeuratObj@meta.data[[clust_label]])
   cellnames <- rownames(SeuratObj@meta.data)
@@ -378,4 +378,92 @@ PlotDimCoef <- function(SeuratObj, scIdentObj, ms_celltypes = NULL, reduction, c
   p2 <- lapply(p1, function(x) suppressMessages(x + fix.sc))
   
   patchwork::wrap_plots(p2, ncol = ncol, nrow = nrow)
+}
+
+#' scIdent_MIXTURE
+#' @param X the signature matrix, a NxL matrix of N genes and L cell lines
+#' @param y a vector of bulk gene expression sample 
+#' @param nu (float) the nu value, default nu = c(0.25,0.5,0.75)
+#' @param minProp float. noise threshold level
+#' @param maxiter default 6
+#' 
+#' @export
+scIdent_MIXTURE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 1e-3, maxiter = 6){
+  #this function is not supossed to be directly called 
+  #Args:
+  # X : Nxc gene expression data for the "c" molecular signatures with N genes.
+  # y : normalized (centred) gene expression data from the subject Mixture (Nx1)
+  # nu: the nu value (values in a verctor)  for the SVR
+  # minProp : noise upper bound (0.1% of the FULL proportion range)
+  # maxiter : maximal number of allowed iterations
+  # Return:
+  # a list of:
+  #     Wa = absolute coefficients (1xc)
+  #     Wp = proportional coefficients (1xc)
+  #     RMSEa = RMSE for absolute coefficients (numeric)
+  #     RMSEp= RMSE for proportion coefficients (numeric) 
+  #     Ra = correlation for abolute coeffs
+  #     Rp = correlation for proportional coeffs
+  #     BestParams = optimal paramters for SVR
+  #     Iter= number or reached iterations
+  if(all(is.nan(y))) {
+    return(list(Wa=rep(NA,ncol(X)), Wp = rep(NA,ncol(X)), RMSEa = NA, RMSEp= NA , Ra=NA, Rp=NA,  BestParams = NA, Iter=NA))
+  }
+  if(all(is.na(y))) {
+    return(list(Wa=rep(NA,ncol(X)), Wp = rep(NA,ncol(X)), RMSEa = NA, RMSEp= NA , Ra=NA, Rp=NA,  BestParams = NA, Iter=NA))
+  }
+  wsel <- matrix(1, ncol=ncol(X), nrow=1)
+  colnames(wsel) <- colnames(X)
+  ok<- TRUE
+  
+  iter <- 0
+  while(ok){
+    iter <- iter + 1
+    model <- TuneSvmForDeconv(XX=X[,which(wsel>0),drop=FALSE],Y = y, nuseq = nu, delta = minProp)
+    
+    w <- t(model$coefs) %*% model$SV
+    w[w<0] <- 0
+    w.abs <- w
+    w <- w/sum(w,na.rm=T)
+    # w[ w < minProp] <- 0
+    if(all(is.nan(w))){
+      return(list(Wa=rep(NA,ncol(X)), Wp = rep(NA,ncol(X)), RMSEa = NA, RMSEp= NA , Ra=NA, Rp=NA,  BestParams = unlist(model$nu), Iter=iter))
+    }
+    if(any(w.abs < ms_treshold)){#normlized test
+      
+      wsel[which(colnames(wsel) %in% colnames(w)[-which(w.abs >= ms_treshold)]) ] <- 0      
+      if(sum(w > 0) == 1) break
+    } else{
+      ok <- FALSE
+      # print(iter)
+    }
+    if(iter > maxiter) {
+      ok=FALSE
+    }
+    
+    
+  }
+  
+  wo <- w.abs
+  wsel <- matrix(0, ncol=ncol(X), nrow=1)
+  colnames(wsel) <- colnames(X)
+  wsel[ which(colnames(wsel) %in% colnames(wo))] <- wo
+  
+  ##wsel es el absolute, sin normalizar por la sum(w)
+  u <- sweep(X,MARGIN=2,wsel,'*')
+  k <- apply(u, 1, sum,na.rm=T)
+  nusvm <- sqrt((mean((k - y)^2,na.rm=T)))
+  corrv <- cor(k, y)
+  
+  ##calculo de fracciones
+  rm(w)
+  w<-wsel/sum(wsel)#proportions or fractions (abs_method = sig.scores)
+  uw <- sweep(X,MARGIN=2,w,'*')
+  kw <- apply(uw, 1, sum,na.rm=T)
+  nusvmw <- sqrt((mean((kw - y)^2,,na.rm=T)))
+  corrvw <- cor(kw, y)
+  
+  
+  return(list(Wa=wsel, Wp = w, RMSEa = nusvm, RMSEp= nusvmw , Ra=corrv, Rp=corrvw,  BestParams = unlist(model$nu), Iter=iter))
+  
 }
