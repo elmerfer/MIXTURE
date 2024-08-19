@@ -431,7 +431,7 @@ scIdent_MIXTURE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 1e-3, maxiter 
     }
     if(any(w.abs < 0.09)){#normlized test
       
-      wsel[which(colnames(wsel) %in% colnames(w)[-which(w.abs >= ms_threshold)]) ] <- 0      
+      wsel[which(colnames(wsel) %in% colnames(w)[-which(w.abs >= 0.09)]) ] <- 0      
       if(sum(w > 0) == 1) break
     } else{
       ok <- FALSE
