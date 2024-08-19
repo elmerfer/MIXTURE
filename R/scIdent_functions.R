@@ -5,7 +5,7 @@
 #' @param clusters_metadata Column name in `SeuObj@meta.data` with cluster assignments for each cell. Default is `NULL`, which uses `seurat_clusters` variable in `meta.data`.
 #' @param pseudobulk Number of pseudobulk samples to generate for each cluster. Default is 1.
 #' @param pct If 'pseudobulk' is greater than 1, percentage of cells to randomly select for each pseudobulk sample, between 0.1 and 0.9. Default is 1.
-#' @param ms_treshold Minimum similarity threshold for marker gene selection. Default is 0.09.
+#' @param ms_threshold Minimum similarity threshold for marker gene selection. Default is 0.09.
 #' @param sgmtx A matrix where rows are genes and columns are cell types, used as the molecular signature for deconvolution. Default is `LM22`.
 #' @param cores Number of CPU cores to use for computation. Default is 10. If using Windows, it must be set to 1.
 #' @param SeuratAssay The assay to use from the Seurat object. Default is "RNA".
@@ -16,7 +16,7 @@
 #'   \item{clust_abs}{Absolute coefficients estimated for each cluster. If `pseudobulk` > 1, retrieves the median of calculated absolute coefficients.}
 #'   \item{clust_props}{Normalized coefficients, interpretable as proportions.}
 #'   \item{sigOverlap}{Percentage of genes in the molecular signature with more than 0 counts in each pseudobulk sample.}
-#'   \item{statAbs}{If `pseudobulk` > 1, a data frame holding the median, IQR, first and third quartile, minimum and maximum absolute coefficients for cell types with a median higher than `ms_treshold`.}
+#'   \item{statAbs}{If `pseudobulk` > 1, a data frame holding the median, IQR, first and third quartile, minimum and maximum absolute coefficients for cell types with a median higher than `ms_threshold`.}
 #' }
 #' 
 #' @details
@@ -24,7 +24,7 @@
 #' 
 #' @export
 
-scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, ms_treshold = 0.09, sgmtx = LM22, cores = 10L, SeuratAssay = "RNA") {
+scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, ms_threshold = 0.09, sgmtx = LM22, cores = 10L, SeuratAssay = "RNA") {
   if (!require("tidyverse", character.only = TRUE)) {
     install.packages(package, dependencies = TRUE)
     library(package, character.only = TRUE)
@@ -138,16 +138,16 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
     clust_idents <- mix_abs  %>% 
       group_by(cluster) %>%
       dplyr::mutate(median_max = max(median)) %>%
-      mutate(median = ifelse(median_max < ms_treshold,NA,median),
-             IQR = ifelse(median_max < ms_treshold,NA,IQR)) %>% 
+      mutate(median = ifelse(median_max < ms_threshold,NA,median),
+             IQR = ifelse(median_max < ms_threshold,NA,IQR)) %>% 
       dplyr::summarize(MS_cluster = ifelse(is.na(max(median)),0,1)) %>% 
       ungroup() %>% 
       left_join(., mix_abs  %>% 
                   group_by(cluster) %>%
                   dplyr::mutate(median_max = max(median)) %>%
-                  filter(median_max >= ms_treshold) %>% 
+                  filter(median_max >= ms_threshold) %>% 
                   filter(median != 0) %>% 
-                  filter(median >= ms_treshold) %>% 
+                  filter(median >= ms_threshold) %>% 
                   dplyr::summarize(ident_1 = variable[order(median, decreasing = TRUE)][1],
                                    ident_2 = variable[order(median, decreasing = TRUE)][2],
                                    ident_3 = variable[order(median, decreasing = TRUE)][3]),
@@ -163,7 +163,7 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
       dplyr::summarize(median = median(value)) %>% 
       ungroup() %>%
       pivot_wider(names_from = variable, values_from = median)
-    cluster_abs[,-1][cluster_abs[,-1] < ms_treshold] <- 0
+    cluster_abs[,-1][cluster_abs[,-1] < ms_threshold] <- 0
   } else {
     mix_abs <- as.data.frame(deconv_rs$Subjects$MIXabs) %>% 
       mutate(cluster = gsub("\\*.*","",rownames(.))) %>% 
@@ -175,15 +175,15 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
     clust_idents <- mix_abs  %>% 
       group_by(cluster) %>%
       dplyr::mutate(value_max = max(value)) %>%
-      mutate(value = ifelse(value_max < ms_treshold,NA,value)) %>% 
+      mutate(value = ifelse(value_max < ms_threshold,NA,value)) %>% 
       dplyr::summarize(MS_cluster = ifelse(is.na(max(value)),0,1)) %>% 
       ungroup() %>% 
       left_join(., mix_abs  %>% 
                   group_by(cluster) %>%
                   dplyr::mutate(value_max = max(value)) %>%
-                  filter(value_max >= ms_treshold) %>% 
+                  filter(value_max >= ms_threshold) %>% 
                   filter(value != 0) %>% 
-                  filter(value >= ms_treshold) %>% 
+                  filter(value >= ms_threshold) %>% 
                   dplyr::summarize(ident_1 = variable[order(value, decreasing = TRUE)][1],
                                    ident_2 = variable[order(value, decreasing = TRUE)][2],
                                    ident_3 = variable[order(value, decreasing = TRUE)][3]),
@@ -196,7 +196,7 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
       reshape2::melt(id.vars="cluster") %>%
       mutate(value = ifelse(is.na(value),0,value)) %>% 
       pivot_wider(names_from = variable, values_from = value) 
-    cluster_abs[,-1][cluster_abs[,-1] < ms_treshold] <- 0
+    cluster_abs[,-1][cluster_abs[,-1] < ms_threshold] <- 0
   }
   
   cat(paste0("\nComplete! ",sum(clust_idents$MS_cluster)," clusters contain MS cell types."))
@@ -216,7 +216,7 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
                        max = max(value)) %>% 
       filter(median != 0) %>% 
       arrange(cluster,dplyr::desc(median)) %>% 
-      filter(median >= ms_treshold)
+      filter(median >= ms_threshold)
     
   } else {NULL}
   normalize_nonzero <- function(x) {
@@ -243,7 +243,7 @@ scIdent <- function(SeuObj, clusters_metadata = NULL, pseudobulk = 1, pct = 1, m
               statAbs = statAbs,
               pseudobulk = pseudobulk,
               pct = pct,
-              ms_treshold = ms_treshold,
+              ms_threshold = ms_threshold,
               clusters_metadata = clusters_metadata))
 }
 
@@ -388,7 +388,7 @@ PlotDimCoef <- function(SeuratObj, scIdentObj, ms_celltypes = NULL, reduction, c
 #' @param maxiter default 6
 #' 
 #' @export
-scIdent_MIXTURE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 1e-3, maxiter = 6){
+scIdent_MIXTURE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 1e-3, maxiter = 6, ms_threshold = ms_threshold){
   #this function is not supossed to be directly called 
   #Args:
   # X : Nxc gene expression data for the "c" molecular signatures with N genes.
@@ -429,9 +429,9 @@ scIdent_MIXTURE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 1e-3, maxiter 
     if(all(is.nan(w))){
       return(list(Wa=rep(NA,ncol(X)), Wp = rep(NA,ncol(X)), RMSEa = NA, RMSEp= NA , Ra=NA, Rp=NA,  BestParams = unlist(model$nu), Iter=iter))
     }
-    if(any(w.abs < ms_treshold)){#normlized test
+    if(any(w.abs < ms_threshold)){#normlized test
       
-      wsel[which(colnames(wsel) %in% colnames(w)[-which(w.abs >= ms_treshold)]) ] <- 0      
+      wsel[which(colnames(wsel) %in% colnames(w)[-which(w.abs >= ms_threshold)]) ] <- 0      
       if(sum(w > 0) == 1) break
     } else{
       ok <- FALSE
