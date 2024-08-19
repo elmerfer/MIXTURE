@@ -388,7 +388,7 @@ PlotDimCoef <- function(SeuratObj, scIdentObj, ms_celltypes = NULL, reduction, c
 #' @param maxiter default 6
 #' 
 #' @export
-scIdent_MIXTURE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 1e-3, maxiter = 6, ms_threshold = ms_threshold){
+scIdent_MIXTURE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 1e-3, maxiter = 6){
   #this function is not supossed to be directly called 
   #Args:
   # X : Nxc gene expression data for the "c" molecular signatures with N genes.
@@ -429,7 +429,7 @@ scIdent_MIXTURE <- function(X,y, nu = c(0.25,0.5,0.75), minProp = 1e-3, maxiter 
     if(all(is.nan(w))){
       return(list(Wa=rep(NA,ncol(X)), Wp = rep(NA,ncol(X)), RMSEa = NA, RMSEp= NA , Ra=NA, Rp=NA,  BestParams = unlist(model$nu), Iter=iter))
     }
-    if(any(w.abs < ms_threshold)){#normlized test
+    if(any(w.abs < 0.09)){#normlized test
       
       wsel[which(colnames(wsel) %in% colnames(w)[-which(w.abs >= ms_threshold)]) ] <- 0      
       if(sum(w > 0) == 1) break
